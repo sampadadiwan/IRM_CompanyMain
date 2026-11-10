@@ -104,7 +104,8 @@ Then('the deal investor {string} should have the following tasks:') do |investor
     break if expected_titles.all? { |title| actual_titles.include?(title) }
     raise "Investor tasks not found. Expected: #{expected_titles}, Actual: #{actual_titles}" if Time.now - start_time > max_wait
 
-    sleep 1
+    # Kept: this wait loop's poll interval (was 1 s - a shorter one notices the tasks sooner)
+    sleep 0.25
   end
 
   expected_titles.each do |title|
@@ -295,7 +296,8 @@ Then('the current activity for investor {string} should be the next activity aft
     break if next_activity.nil? || (@deal_investor.deal_activity&.title == next_activity.title)
     raise "Investor current step did not advance to #{next_activity.title} in database within #{max_wait}s. Current: #{@deal_investor.deal_activity&.title}" if Time.now - start_time > max_wait
 
-    sleep 1
+    # Kept: this wait loop's poll interval (was 1 s - a shorter one notices the advance sooner)
+    sleep 0.25
   end
 
   expect(@deal_investor.deal_activity.title).to eq(next_activity.title) if next_activity

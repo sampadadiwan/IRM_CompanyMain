@@ -105,19 +105,23 @@
 
 
   Then('the approval responses are generated with status {string}') do |string|
-    sleep(2)
-    @approval.reload
-    @approval.approval_responses.pending.count.should > 0
-    @approval.approval_responses.pending.count.should == @approval.pending_investors.count
+    # Was sleep(2): retry until the responses are there; fails only where the old check failed
+    eventually do
+      @approval.reload
+      @approval.approval_responses.pending.count.should > 0
+      @approval.approval_responses.pending.count.should == @approval.pending_investors.count
+    end
   end
 
   When('the approval is approved') do
     visit(approval_url(@approval))
     click_on("Approve")
     click_on("Proceed")
-    sleep(1)
-    @approval.reload
-    @approval.approved.should == true
+    # Was sleep(1): retry the check until the approve request has committed
+    eventually do
+      @approval.reload
+      @approval.approved.should == true
+    end
   end
 
 
@@ -127,11 +131,13 @@
   end
 
   Then('the investor gets the approval notification') do
-    sleep(2)
+    # No sleep(2): each address below waits for its own mail before opening it
     puts "\n#### Emails ###\n"
     puts @approval.pending_investors.collect(&:emails).flatten
 
     @approval.pending_investors.collect(&:emails).flatten.each do |email|
+        # open_email returns nil when the mail has not arrived; a missing mail failed before too
+        eventually { expect(emails_sent_to(email)).not_to be_empty }
         open_email(email)
         @custom_notification ||= nil
         if @custom_notification.present?
@@ -213,17 +219,18 @@
   When('the Send Reminder button on approval is clicked') do
     visit(approval_url(@approval))
     click_on("Send Reminder")
-    sleep(1)
+    # No sleeps: click_on waits for the modal's Proceed, and the expect waits for the flash
     click_on("Proceed")
-    sleep(1)
     expect(page).to have_content("Successfully sent reminder")
   end
 
   Then('the approval response is {string}') do |arg|
-    sleep(1)
-    @approval.reload
-    @approval_response = @approval.approval_responses.first
-    @approval_response.status.should == arg
+    # Was sleep(1): retry until the response's status has landed
+    eventually do
+      @approval.reload
+      @approval_response = @approval.approval_responses.first
+      @approval_response.status.should == arg
+    end
   end
 
 

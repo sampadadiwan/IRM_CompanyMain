@@ -132,7 +132,7 @@ When('I click link {string}') do |text|
       page.execute_script("Array.from(document.querySelectorAll('a, button, span')).find(el => el.textContent.trim() === '#{text}')?.click()")
     end
   end
-  sleep(0.5)
+  # No sleep(0.5): its one use (ratio_formula.feature) is followed by an "I should see" that waits
 end
 
 When('I select option {string} from {string}') do |value, field|

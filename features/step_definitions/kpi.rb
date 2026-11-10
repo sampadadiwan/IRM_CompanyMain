@@ -1,15 +1,25 @@
+# Clicks the import form's Save and runs the import it creates. Replaces "click Save; sleep(2);
+# ImportUpload.last; perform_now; sleep(4)": Save's redirect can land after 2 s under load, and
+# perform_now is synchronous, so the trailing sleep(4) waited for nothing.
+def kpi_save_and_run_import_upload
+  uploads_before = ImportUpload.count
+  click_on("Save")
+  # Wait for Save to create the ImportUpload row (same wait as the portfolio-company upload step)
+  eventually { expect(ImportUpload.count).to be > uploads_before }
+  import_upload = ImportUpload.last
+  ImportUploadJob.perform_now(import_upload.id)
+  import_upload
+end
+
 Given('Given I upload a kpis file for the company') do
   visit(kpi_reports_path)
   click_on("Upload")
-  sleep(2)
+  # fill_in waits for the upload form itself (was sleep 2)
   fill_in('import_upload_name', with: "Test Upload")
   @import_file = "kpis.xlsx"
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
   wait_for_upload("./public/sample_uploads/#{@import_file}") # JS direct-upload to /upload; returns once it lands (was sleep 2)
-  click_on("Save")
-  sleep(2)
-  ImportUploadJob.perform_now(ImportUpload.last.id)
-  sleep(4)
+  kpi_save_and_run_import_upload
 end
 
 Given('Given I upload a kpis file for the portfolio company') do
@@ -17,10 +27,9 @@ Given('Given I upload a kpis file for the portfolio company') do
   # Kpis is a dropdown tab on the stakeholder page; ?tab= opens the screen directly
   visit(investor_path(@portfolio_company, tab: "kpis-tab"))
   page.execute_script("document.body.style.zoom = '80%'")
-  sleep(2)
+  # click_on and fill_in wait for their elements (were sleep 2 each)
   click_on("Actions")
   click_on("Upload")
-  sleep(2)
   fill_in('import_upload_name', with: "Test Upload")
   @import_file = "kpis.xlsx"
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
@@ -43,18 +52,13 @@ Given('Given I upload a kpi mappings file {string} for the portfolio company') d
   # Kpis is a dropdown tab on the stakeholder page; ?tab= opens the screen directly
   visit(investor_path(@portfolio_company, tab: "kpi-mappings-tab"))
   page.execute_script("document.body.style.zoom = '80%'")
-  sleep(2)
+  # click_on and fill_in wait for their elements (were sleep 2 each)
   click_on("Upload")
-  sleep(2)
   fill_in('import_upload_name', with: "Mapping Upload")
   @import_file = file
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
   wait_for_upload("./public/sample_uploads/#{@import_file}") # JS direct-upload to /upload; returns once it lands (was sleep 2)
-  click_on("Save")
-  sleep(2)
-  @iu = ImportUpload.last
-  ImportUploadJob.perform_now(@iu.id)
-  sleep(4)
+  @iu = kpi_save_and_run_import_upload
   expect(@iu.reload.failed_row_count == 0).to be true
 end
 
@@ -91,7 +95,7 @@ When('I go to the Kpis tab on the investor show page for the portfolio company')
   # Kpis is a dropdown tab on the stakeholder page; ?tab= opens the screen directly
   visit(investor_path(@portfolio_company, tab: "kpis-tab"))
   page.execute_script("document.body.style.zoom = '80%'")
-  sleep(2)
+  # No sleep(2): the following steps' finders wait for the page
 end
 
 # Mirrors the real dropdown-menu interaction the "Actions" button drives (see the .ti-settings
@@ -101,8 +105,12 @@ end
 # needs the confirm-modal handled, not a plain link.
 When('I click Actions then {string} on the Kpis page') do |link_text|
   click_on("Actions")
+  before_url = current_url
   click_on(link_text)
-  sleep(1)
+  # Was sleep(1): wait - at most that same 1 s, never failing - for the link's navigation to
+  # change the URL, so the next step's finders do not act on the page being left
+  deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 1
+  sleep 0.05 while current_url == before_url && Process.clock_gettime(Process::CLOCK_MONOTONIC) < deadline
 end
 
 Then('all pending KPIs for the portfolio company should be approved without error') do
@@ -128,18 +136,13 @@ And('Given I upload a kpi mappings file for the company') do
   # Kpis is a dropdown tab on the stakeholder page; ?tab= opens the screen directly
   visit(investor_path(@portfolio_company, tab: "kpi-mappings-tab"))
   page.execute_script("document.body.style.zoom = '80%'")
-  sleep(2)
+  # click_on and fill_in wait for their elements (were sleep 2 each)
   click_on("Upload")
-  sleep(2)
   fill_in('import_upload_name', with: "Mapping Upload")
   @import_file = "investor_kpi_mappings_test_1.xlsx"
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
   wait_for_upload("./public/sample_uploads/#{@import_file}") # JS direct-upload to /upload; returns once it lands (was sleep 2)
-  click_on("Save")
-  sleep(2)
-  @iu = ImportUpload.last
-  ImportUploadJob.perform_now(@iu.id)
-  sleep(4)
+  @iu = kpi_save_and_run_import_upload
   expect(@iu.reload.failed_row_count == 0).to be true
 end
 
@@ -176,9 +179,11 @@ Then('when I setup the KPI mappings for the portfolio company') do
   # Kpis is a dropdown tab on the stakeholder page; ?tab= opens the screen directly
   visit(investor_path(@portfolio_company, tab: "kpi-mappings-tab"))
   page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
-  sleep(2)
+  # click_on waits for the button (was sleep 2)
   click_on("Generate From Last Report")
-  sleep(2)
+  # Was sleep(2): the redirect's flash (InvestorKpiMappingsController#generate) means the mappings
+  # are saved. Capped at that same 2 s and not asserted, so a refused generate is no stricter.
+  page.has_content?("Investor KPI Mappings generated", wait: 2)
 end
 
 Then('when I view the KPI report for the portfolio company in grid view') do
@@ -343,10 +348,7 @@ Given('I upload an investor kpis mappings file for the company') do
   @import_file = "investor_kpi_mappings_test.xlsx"
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
   wait_for_upload("./public/sample_uploads/#{@import_file}") # JS direct-upload to /upload; returns once it lands (was sleep 2)
-  click_on("Save")
-  sleep(2)
-  ImportUploadJob.perform_now(ImportUpload.last.id)
-  sleep(4)
+  kpi_save_and_run_import_upload
 end
 
 Given('I upload an investor kpis mappings file {string} for the company') do |file|
@@ -356,10 +358,7 @@ Given('I upload an investor kpis mappings file {string} for the company') do |fi
   @import_file = file
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
   wait_for_upload("./public/sample_uploads/#{@import_file}") # JS direct-upload to /upload; returns once it lands (was sleep 2)
-  click_on("Save")
-  sleep(2)
-  ImportUploadJob.perform_now(ImportUpload.last.id)
-  sleep(4)
+  kpi_save_and_run_import_upload
 end
 
 Then('There should be {string} Investor Kpi Mappings created') do |count|
@@ -410,11 +409,11 @@ end
 Given('I am on the KPI upload page for the portfolio company') do
   # Kpis is a dropdown tab on the stakeholder page; ?tab= opens the screen directly
   visit(investor_path(@portfolio_company, tab: "kpis-tab"))
-  sleep(1)
 
+  # click_on waits for the page (was sleep 1); the next step's advance_kpi_wizard_to waits for
+  # the wizard to render (was the trailing sleep 1)
   click_on("Actions")
   click_on("New")
-  sleep(1)
 end
 
 When('I upload the kpi workbook {string} for validation') do |workbook_file|

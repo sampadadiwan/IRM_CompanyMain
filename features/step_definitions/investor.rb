@@ -510,8 +510,10 @@ Given('I create a new InvestorKyc {string} with files {string} for {string}') do
         click_on 'Choose file'
       end
     end
+    # Was sleep(4) after the if: wait for this field's direct upload to land (upload_helpers.rb).
+    # No-raise, like the sleep - the form's own required-file check still catches a missing file.
+    wait_for_upload('Offer_1_SPA.pdf', within: '#custom_file_upload_pan_tax_id', raise_on_timeout: false)
   end
-  sleep(4)
 
   fill_in("#{class_name}_full_name", with: @investor_kyc.full_name)
   fill_in("#{class_name}_PAN", with: @investor_kyc.PAN)
@@ -525,6 +527,8 @@ Given('I create a new InvestorKyc {string} with files {string} for {string}') do
         click_on 'Choose file'
       end
     end
+    # Was the sleep(2) below the commented block: scoped, because PAN took the same file
+    wait_for_upload('Offer_1_SPA.pdf', within: '#custom_file_upload_address_proof', raise_on_timeout: false)
   end
   # if files.include?("cancelled cheque")
   #   binding.pry
@@ -534,7 +538,6 @@ Given('I create a new InvestorKyc {string} with files {string} for {string}') do
   #     end
   #   end
   # end
-  sleep(2)
 
   fill_in("#{class_name}_address", with: @investor_kyc.address)
   fill_in("#{class_name}_corr_address", with: @investor_kyc.corr_address)
@@ -556,6 +559,8 @@ Given('I create a new InvestorKyc {string} with files {string} for {string}') do
         click_on 'Choose file'
       end
     end
+    # Was one sleep(2) after both ifs: wait for each field's own upload instead
+    wait_for_upload('Offer_1_SPA.pdf', within: '#custom_file_f1', raise_on_timeout: false)
   end
 
   if files.include?("f2")
@@ -564,8 +569,8 @@ Given('I create a new InvestorKyc {string} with files {string} for {string}') do
         click_on 'Choose file'
       end
     end
+    wait_for_upload('Offer_1_SPA.pdf', within: '#custom_file_f2', raise_on_timeout: false)
   end
-  sleep(2)
 
   if args.include?("properties")
     @investor_kyc.properties.each do |key, value|
@@ -588,7 +593,8 @@ Given('I fill the kyc form') do
       click_on 'Choose file'
     end
   end
-  sleep(2)
+  # Was sleep(2): wait for this field's upload (no-raise, like the sleep)
+  wait_for_upload('Offer_1_SPA.pdf', within: '#custom_file_upload_pan_tax_id', raise_on_timeout: false)
 
   fill_in("#{class_name}_full_name", with: @temp_kyc.full_name)
   fill_in("#{class_name}_PAN", with: @temp_kyc.PAN)
@@ -600,7 +606,8 @@ Given('I fill the kyc form') do
       click_on 'Choose file'
     end
   end
-  sleep(2)
+  # Was sleep(2): scoped, because PAN took the same file
+  wait_for_upload('Offer_1_SPA.pdf', within: '#custom_file_upload_address_proof', raise_on_timeout: false)
 
   fill_in("#{class_name}_address", with: @temp_kyc.address)
   fill_in("#{class_name}_corr_address", with: @temp_kyc.corr_address)
@@ -634,19 +641,20 @@ When('I edit the investor kyc and upload the missing custom file {string}') do |
   @investor_kyc = InvestorKyc.last
   field_id = FormCustomField.to_name(custom_field_name)
 
+  # No sleeps between these: visit and every click wait for the Stimulus controllers to connect
+  # (features/support/stimulus_ready.rb), and the wizard switches panels with an instant
+  # jQuery hide/show, so click_on("Next") always finds the current panel's button
   visit(edit_investor_kyc_path(@investor_kyc))
-  sleep(1)
   click_on("Next")
-  sleep(1)
   click_on("Next")
-  sleep(1)
 
   page.attach_file('./public/sample_uploads/Offer_1_SPA.pdf') do
     within "#custom_file_#{field_id}" do
       click_on 'Choose file'
     end
   end
-  sleep(2)
+  # Was sleep(2): wait for this field's upload (no-raise, like the sleep)
+  wait_for_upload('Offer_1_SPA.pdf', within: "#custom_file_#{field_id}", raise_on_timeout: false)
 
   click_on("Save")
   expect(page).to have_content("successfully")
@@ -870,7 +878,8 @@ Then('we Generate Commitment Agreement for the first capital commitment with cor
   steps %(
     Then we Generate Commitment Agreement for the first capital commitment again
   )
-  sleep 3
+  # No sleep 3: the step that follows ("we get the email with error") retries until the
+  # generation job's error email arrives
 end
 
 Then('we Generate Commitment Agreement for the first capital commitment again') do
@@ -1894,9 +1903,12 @@ end
 When('I filter the investors with {string}') do |string|
   @investor_kyc = InvestorKyc.find_by(full_name: string)
   InvestorKycIndex.import!
-  sleep(1)
+  # Was sleep(1), waiting out Elasticsearch's ~1 s refresh so the import is searchable; ask ES to
+  # refresh the index now instead
+  Chewy.client.indices.refresh(index: InvestorKycIndex.index_name)
   fill_in("search_input", with: string)
-  sleep(0.5)
+  # No sleep(0.5): Enter submits at once (search_controller.js), and the debounced input search
+  # that fires 900 ms later sees an unchanged value and does nothing
   # press enter key
   find("#search_input").send_keys(:return)
 end

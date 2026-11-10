@@ -37,6 +37,7 @@ module DashboardWidgetInlineSettingsSteps
       return if yield
       raise Capybara::ExpectationNotMet, "condition not met within #{timeout}s" if Time.current > deadline
 
+      # Kept: the poll interval of this wait loop, not a fixed wait
       sleep 0.2
     end
   end

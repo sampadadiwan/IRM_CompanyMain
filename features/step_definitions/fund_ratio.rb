@@ -3,7 +3,7 @@ Given("a Bulk Upload is performed for FundRatios with file {string}") do |file_n
   click_tab("Ratios") # under the fund page's Performance dropdown
   find("#fund_ratios_actions").click
   click_on("Upload")
-  sleep(2)
+  # No sleep(2): fill_in waits for the upload form's field
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file_name}"), make_visible: true)
   wait_for_upload("./public/sample_uploads/#{file_name}") # JS direct-upload to /upload; returns once it lands (was sleep 2)
@@ -26,7 +26,7 @@ end
 And("I should find Fund Ratios created with correct data for Fund") do
   visit(fund_path(@fund))
   click_tab("Ratios") # under the fund page's Performance dropdown
-  sleep(2)
+  # No sleep(2): have_content waits for the ratios tab
   expect(page).to have_content("XIRR")
   expect(page).to have_content("27.95 %")
 end
@@ -369,8 +369,11 @@ When('I bulk delete all fund ratios for the fund via the UI') do
   visit(fund_ratios_path(fund_id: @fund.id, q: { s: "id asc" }))
   find("#fund_ratio_bulk_actions").click
   click_on("Delete")
+  mark_page_before_submit
   click_on("Proceed")
-  sleep(2)
+  # Was sleep(2). WithBulkActions#bulk_actions runs the job (inline in tests) and redirects back with
+  # "Bulk Action started..." - wait for that redirect (capped at the old 2 s, never fails)
+  wait_up_to(2) { page_replaced? && page.has_content?("Bulk Action started", wait: false) }
 end
 
 Then('all fund ratios for the fund should be soft deleted with a {string} audit trail entry') do |action|
@@ -420,9 +423,8 @@ Given('Given I upload fund formulas update only sheet for the fund') do
   menu = find('#basic_reports', text: "Account Entries")  # Replace with actual selector
   menu.hover
   click_on("Allocation Formulas")
-  sleep(1)
+  # No sleeps: click_on and fill_in wait for the Upload button and the form's field
   click_on("Upload")
-  sleep(2)
   fill_in('import_upload_name', with: "Test Fund Formulas Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/fund_formulas_update_only.xlsx"), make_visible: true)
   click_on("Save")
@@ -440,9 +442,8 @@ Given('Given I upload fund formulas for the fund') do
   menu = find('#basic_reports', text: "Account Entries")  # Replace with actual selector
   menu.hover
   click_on("Allocation Formulas")
-  sleep(1)
+  # No sleeps: click_on and fill_in wait for the Upload button and the form's field
   click_on("Upload")
-  sleep(2)
   fill_in('import_upload_name', with: "Test Fund Formulas Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/fund_formulas.xlsx"), make_visible: true)
   click_on("Save")

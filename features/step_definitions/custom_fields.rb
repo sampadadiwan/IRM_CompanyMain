@@ -13,7 +13,9 @@ Given('I add a custom form for {string} with reg env {string} and tag {string}')
   fill_in("form_type_tag", with: tag)
   fill_in("form_type_reg_env", with: reg_env)
   click_on("Save")
-  sleep(2)
+  # Was sleep(2) before reading FormType.last: wait for the create's redirect flash instead. Capped
+  # and non-failing like the sleep - on a refused save (form re-rendered) it just moves on
+  page.has_content?("Form type was successfully created.", wait: 10)
   @form_type = FormType.last
 end
 
@@ -68,8 +70,9 @@ Given('I fill InvestorKyc details with regulatory fields {string} with files {st
         click_on 'Choose file'
       end
     end
-    # Settle time for the PAN upload only - it used to run (4 s) even when nothing was uploaded
-    sleep(4)
+    # Was sleep(4): wait for this field's direct upload (upload_helpers.rb). No-raise, like the
+    # sleep - the form's own required-file check still catches a missing file
+    wait_for_upload('Offer_1_SPA.pdf', within: '#custom_file_upload_pan_tax_id', raise_on_timeout: false)
   end
 
   fill_in("#{class_name}_full_name", with: @investor_kyc.full_name)
@@ -85,9 +88,10 @@ Given('I fill InvestorKyc details with regulatory fields {string} with files {st
         click_on 'Choose file'
       end
     end
+    # Was a sleep(2) after the if: scoped, because PAN took the same file
+    wait_for_upload('Offer_1_SPA.pdf', within: '#custom_file_upload_address_proof', raise_on_timeout: false)
   end
 
-  sleep(2)
   fill_in("#{class_name}_address", with: @investor_kyc.address)
   fill_in("#{class_name}_corr_address", with: @investor_kyc.corr_address)
   fill_in("#{class_name}_bank_name", with: @investor_kyc.bank_account_number)
@@ -137,7 +141,7 @@ end
 Given('I go to the Instruments tab') do
   open_tab_pane("instruments-tab") # under the portfolio company page's Instruments dropdown
   page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
-  sleep(1)
+  # No sleep(1): the next step's click_on("New") waits for the pane's button itself
 end
 
 Given('I add a new Instrument with custom form tag {string}') do |tag|
@@ -239,7 +243,9 @@ Given('I fill the instrument form without the regulatory fields') do
   select("INR", from: "investment_instrument_currency")
   fill_in("investment_instrument_investment_domicile", with: "Domestic")
   click_on("Save")
-  sleep(2)
+  # Was sleep(2) before reading InvestmentInstrument.last: wait for the create's flash instead
+  # (capped and non-failing like the sleep)
+  page.has_content?("Investment instrument was successfully created.", wait: 10)
   @instrument = InvestmentInstrument.last
 end
 
@@ -261,7 +267,8 @@ end
 Given('I fill in the reg env with {string} and save') do |reg_env|
   fill_in("form_type_reg_env", with: reg_env)
   click_on("Save")
-  sleep(2)
+  # Was sleep(2) before the reload: wait for the update's flash (capped and non-failing like the sleep)
+  page.has_content?("Form type was successfully updated.", wait: 10)
   @form_type.reload
 end
 
@@ -306,7 +313,9 @@ Given('I add a custom form for {string} with tag {string}') do |class_name, tag|
   select(class_name, from: "form_type_name")
   fill_in("form_type_tag", with: tag)
   click_on("Save")
-  sleep(2)
+  # Was sleep(2) before reading FormType.last: wait for the create's redirect flash instead. Capped
+  # and non-failing like the sleep - on a refused save (form re-rendered) it just moves on
+  page.has_content?("Form type was successfully created.", wait: 10)
   @form_type = FormType.last
 end
 
@@ -323,7 +332,7 @@ Given('I click add {string} reporting fields to {string} form from the dropdown'
     end
   end
   click_on("Proceed")
-  sleep(1)
+  # No sleep(1): the expectation below waits for the flash
   expect(page).to have_content("Reporting fields added successfully to #{@form_type.name} #{@form_type.tag.presence || @form_type.id}")
 end
 
@@ -377,7 +386,8 @@ When('I try to save a new InvestorKyc {string} without any files') do |args|
   fill_in("#{class_name}_PAN", with: @investor_kyc.PAN)
   fill_in("#{class_name}_birth_date", with: @investor_kyc.birth_date)
   click_on("Next")
-  sleep(2)
+  # No sleep(2): the wizard shows the next step with an instant jQuery show(), and fill_in waits
+  # for the field anyway
 
   fill_in("#{class_name}_address", with: @investor_kyc.address)
   fill_in("#{class_name}_corr_address", with: @investor_kyc.corr_address)
@@ -387,7 +397,7 @@ When('I try to save a new InvestorKyc {string} without any files') do |args|
   fill_in("#{class_name}_ifsc_code", with: @investor_kyc.ifsc_code)
   # Step 2 always has Next; custom file fields live on Step 3
   click_on("Next")
-  sleep(1)
+  # No sleep(1): instant panel switch; click_on waits for the visible Save
   click_on("Save")
 end
 
@@ -403,10 +413,10 @@ When('I try to save a new InvestorKyc as a fund employee with no mandatory field
   click_on("New KYC")
   click_on("Individual")
   select(@investor_kyc.investor.investor_name, from: "#{class_name}_investor_id")
+  # No sleeps between these: the wizard switches panels with an instant jQuery hide/show, and
+  # click_on finds the current panel's visible button
   click_on("Next")
-  sleep(1)
   click_on("Next")
-  sleep(1)
   click_on("Save")
 end
 

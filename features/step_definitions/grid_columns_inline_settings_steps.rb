@@ -11,6 +11,7 @@ module GridColumnsSteps
       return if yield
       raise Capybara::ExpectationNotMet, "condition not met within #{timeout}s" if Time.current > deadline
 
+      # Kept: the poll interval of this wait loop, not a fixed wait
       sleep 0.2
     end
   rescue Capybara::Playwright::Node::StaleReferenceError
@@ -364,7 +365,10 @@ end
 When("I search the table for {string}") do |text|
   find("#search_input").fill_in(with: text)
   find("#search_input").send_keys(:enter)
-  sleep 1.5
+  # Was sleep 1.5: search_controller.js shows #search_spinner_wrapper on Enter and the search
+  # response re-renders it hidden, so wait for that instead - capped at the old 1.5 s and
+  # non-raising, so it is never slower or stricter than the sleep
+  page.has_no_css?("#search_spinner_wrapper:not(.d-none)", wait: 1.5)
 end
 
 Then("I should still be on the fund page") do

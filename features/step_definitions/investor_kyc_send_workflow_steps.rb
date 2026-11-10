@@ -70,7 +70,11 @@ Given('I am logged in as the investor user') do
   fill_in('user_email', with: @investor_user.email)
   fill_in('user_password', with: 'password')
   click_on('Log In')
-  sleep(1)
+  # Was sleep(1): wait for Devise's redirect off the sign-in page (non-raising - a failed login
+  # still fails at the next step, as before), then for the landing page's own requests, whose
+  # late responses would otherwise overwrite the session cookie (see wait_for_page_to_settle)
+  page.has_no_current_path?('/users/sign_in')
+  wait_for_page_to_settle
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -120,7 +124,7 @@ When('I open the KYC edit page as the investor via a valid signed link') do
   @signed_id = InvestorKyc.signed_id_for_user(@investor_kyc, @investor_user)
   Capybara.session_name = :kyc_magic_link
   visit(edit_investor_kyc_path(id: :shared, signed_id: @signed_id))
-  sleep(1)
+  # No sleep(1): visit waits for the page load and the next steps' matchers wait for content
 end
 
 When('I open the KYC show page as the investor via a valid signed link') do
@@ -128,7 +132,7 @@ When('I open the KYC show page as the investor via a valid signed link') do
   @signed_id ||= InvestorKyc.signed_id_for_user(@investor_kyc, @investor_user)
   Capybara.session_name = :kyc_magic_link
   visit(investor_kyc_path(@investor_kyc, signed_id: @signed_id))
-  sleep(1)
+  # No sleep(1): visit waits for the page load and the next steps' matchers wait for content
 end
 
 When('I visit the KYC edit page with an expired signed link') do
@@ -140,13 +144,13 @@ When('I visit the KYC edit page with an expired signed link') do
   )
   Capybara.session_name = :kyc_magic_link
   visit(edit_investor_kyc_path(id: :shared, signed_id: expired_token))
-  sleep(1)
+  # No sleep(1): visit waits for the page load and the next steps' matchers wait for content
 end
 
 When('I visit the KYC edit page with a tampered signed link') do
   Capybara.session_name = :kyc_magic_link
   visit(edit_investor_kyc_path(id: :shared, signed_id: 'tampered_kyc_token_abc123_invalid'))
-  sleep(1)
+  # No sleep(1): visit waits for the page load and the next steps' matchers wait for content
 end
 
 # Fires InvestorKycAction#updated_notification (investor_user: true, validate: true) without
@@ -164,12 +168,12 @@ end
 
 When('I visit the investor pending KYC dashboard') do
   visit(investor_pending_investor_kycs_path)
-  sleep(1)
+  # No sleep(1): visit waits for the page load and the next steps' matchers wait for content
 end
 
 When('I visit the investor kycs index filtered by submission_status {string}') do |status|
   visit(investor_kycs_path(q: { submission_status_in: [status] }))
-  sleep(1)
+  # No sleep(1): visit waits for the page load and the next steps' matchers wait for content
 end
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -1,6 +1,11 @@
+# The task form's details editor. It goes away once the create response has rendered - the frame's
+# stream blanks the form, a standalone form redirects to the task - which is after the save and its
+# after_commit notification (inline jobs) have run.
+TASK_FORM_EDITOR = "trix-editor[input='task_details_trix_input_task']".freeze
+
 Given('I am at the tasks page') do
   visit("/tasks")
-  sleep(1)
+  # No sleep(1): visit waits for the page load and the next steps' finders wait for content
 end
 
 # Reproduces a pre-ActionText row: no rich_text record, text in the legacy
@@ -16,11 +21,13 @@ end
 
 When('I create a new task with details {string} and due date {string}') do |details, due_date|
   click_on("New Task", match: :first)
-  find("trix-editor[input='task_details_trix_input_task']").set(details)
+  find(TASK_FORM_EDITOR).set(details)
   fill_in('task_due_date', with: due_date)
   select(@user.full_name, from: 'task_assigned_to_id')
   click_on("Save")
-  sleep(2)
+  # Was sleep(2): the next step reads Task.last, so wait for the create response. Non-raising
+  # (has_no_css? returns false if a validation error keeps the form up) - the next step decides
+  page.has_no_css?(TASK_FORM_EDITOR)
 end
 
 Then('a task should be created with details {string}') do |details|
@@ -54,12 +61,14 @@ end
 
 When('I create a new task and assign it to {string} with details {string}') do |assignee, details|
   click_on("New Task", match: :first)
-  find("trix-editor[input='task_details_trix_input_task']").set(details)
+  find(TASK_FORM_EDITOR).set(details)
   if assignee == "me"
     select @user.full_name, from: 'task_assigned_to_id'
   end
   click_on("Save")
-  sleep(2)
+  # Was sleep(2): wait for the create response - the assignment email the next step opens is sent
+  # by the task's after_commit inside that request. Non-raising, like the sleep
+  page.has_no_css?(TASK_FORM_EDITOR)
 end
 
 Then('an email should be sent to {string} with subject {string}') do |recipient, subject|

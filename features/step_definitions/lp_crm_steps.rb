@@ -1,3 +1,17 @@
+# Waits up to `cap` seconds for the block to turn truthy, then carries on either way. Replaces fixed
+# sleeps after a submit whose result the next step reads straight from the DB: returns as soon as
+# the record lands, and never fails on its own - the next step's assertion still decides, as it
+# did after the sleep.
+def lp_crm_wait_until(cap: Capybara.default_max_wait_time)
+  deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + cap
+  until yield
+    break if Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
+
+    # Poll interval, not a wait for anything in particular
+    sleep 0.1
+  end
+end
+
 # Steps for features/core/lp_crm.feature — the LP CRM MVP
 # (docs/modules/investors/lp_relationship_crm_alt_mvp_prd.md).
 #
@@ -30,7 +44,7 @@ end
 Given('I am at the stakeholder details page') do
   # Lands on the show page with the stakeholder-users (accesses) tab active
   visit(investor_path(@investor))
-  sleep(1)
+  # No sleep(1): visit waits for the page load and the next steps' finders wait for content
 end
 
 # The contact custom fields are rendered by custom_form_fields inside the
@@ -61,7 +75,7 @@ When('I visit the contact page for {string}') do |email|
   @contact = InvestorAccess.find_by(email: email)
   expect(@contact).to be_present
   visit(investor_access_path(@contact))
-  sleep(1)
+  # No sleep(1): visit waits for the page load and the next steps' finders wait for content
 end
 
 Then('I should see the contact details {string}, {string} and {string}') do |designation, poc_role, intro|
@@ -98,6 +112,7 @@ end
 
 When('I add a note {string} from the contact Notes tab') do |details|
   @note_details = details
+  notes_before = Note.count
   # The Notes tab is active by default; its lazy turbo frame loads the notes
   # list scoped to this contact (owner + touch_point)
   within('#notes-tab') do
@@ -107,7 +122,8 @@ When('I add a note {string} from the contact Notes tab') do |details|
     find('#note_details').set(details)
     click_on('Save')
   end
-  sleep(1)
+  # Was sleep(1): the next step reads Note.last, so wait for the note to be saved
+  lp_crm_wait_until { Note.count > notes_before }
 end
 
 Then('the note {string} should be linked to the contact {string}') do |details, email|
@@ -127,6 +143,7 @@ Then('I should see {string} in the notes list') do |name|
 end
 
 When('I add a task {string} from the contact Tasks tab') do |details|
+  tasks_before = Task.count
   # Scoped to the contact tab nav — the sidebar also has a "Tasks" link
   within('#investor_access_tabs') { click_on('Tasks') } # tasks lazy frame loads on first display
   within('#tasks-tab') do
@@ -136,7 +153,8 @@ When('I add a task {string} from the contact Tasks tab') do |details|
     find("trix-editor[input='task_details_trix_input_task']").set(details)
     click_on('Save')
   end
-  sleep(1)
+  # Was sleep(1): the next step reads Task.last, so wait for the task to be saved
+  lp_crm_wait_until { Task.count > tasks_before }
 end
 
 Then('the task {string} should be linked to the contact {string}') do |details, email|
@@ -157,6 +175,7 @@ Then('the note and task show pages should link {string} back to the contact') do
 end
 
 When('I add a note {string} from the contact Notes tab without a touch point') do |details|
+  notes_before = Note.count
   within('#notes-tab') do
     click_on('New Note')
     # Clear the preselected contact — the blank option, selected by value so it
@@ -165,7 +184,8 @@ When('I add a note {string} from the contact Notes tab without a touch point') d
     find('#note_details').set(details)
     click_on('Save')
   end
-  sleep(1)
+  # Was sleep(1): the next step looks the note up in the DB, so wait for it to be saved
+  lp_crm_wait_until { Note.count > notes_before }
 end
 
 Then('the note {string} should have no touch point') do |details|
@@ -227,8 +247,10 @@ When('I add a note {string} against the deal investor with touch point {string}'
                       'note[entity_id]': @entity.id, embedded_note_context: "deal_investor_tab"))
   select("#{contact.full_name} (#{contact.email})", from: 'note_touch_point_id')
   find('#note_details').set(details)
+  notes_before = Note.count
   click_on('Save')
-  sleep(1)
+  # Was sleep(1): the next step reads Note.last, so wait for the note to be saved
+  lp_crm_wait_until { Note.count > notes_before }
 end
 
 When('I add a task {string} against the deal investor with touch point {string}') do |details, email|
@@ -237,8 +259,10 @@ When('I add a task {string} against the deal investor with touch point {string}'
                       embedded_task_context: "deal_investor_tab"))
   select("#{contact.full_name} (#{contact.email})", from: 'task_touch_point_id')
   find("trix-editor[input='task_details_trix_input_task']").set(details)
+  tasks_before = Task.count
   click_on('Save')
-  sleep(1)
+  # Was sleep(1): the next step reads Task.last, so wait for the task to be saved
+  lp_crm_wait_until { Task.count > tasks_before }
 end
 
 Then('the note {string} should be linked to the contact {string} and owned by the deal investor') do |details, email|
@@ -296,7 +320,8 @@ When('I set the stakeholder engagement status to {string}') do |status|
   # engagement_status is a seeded Select custom field on the Investor form
   select(status, from: 'investor_properties_engagement_status')
   click_on('Save')
-  sleep(1)
+  # Was sleep(1): the next step reads the investor back, so wait for the update to land
+  lp_crm_wait_until { @investor.reload.json_fields['engagement_status'] == status }
 end
 
 Then('the investor engagement status should be {string}') do |status|

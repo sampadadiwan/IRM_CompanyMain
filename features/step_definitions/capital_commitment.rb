@@ -233,7 +233,8 @@ Then('when the capital commitment docs are generated') do
       /Documentation generation started|documents? generated/i,
       wait: 20
     )
-    sleep(8)
+    # No sleep(8): the only step that follows ("the generated doc must be attached to the capital
+    # commitments") already retries for up to 30 s per commitment
     # expect(page).to have_content("generated successfully")
   end
 end
@@ -241,8 +242,8 @@ end
 Then('the generated doc must be attached to the capital commitments') do
   CapitalCommitment.all.each do |cc|
     # Same doc-gen race as "the ... is successfully generated for all intended
-    # commitments" above: retry rather than relying solely on the fixed sleep in the
-    # preceding "Generate All Documents" step. The unit-fund example generates docs
+    # commitments" above: retry - the preceding "Generate All Documents" step no longer
+    # sleeps, so this wait is what lets generation finish. The unit-fund example generates docs
     # for multiple commitments back to back, so give it more room than the plain-fund
     # case needs before giving up.
     eventually(timeout: 30) do
@@ -500,7 +501,9 @@ Given('we Generate Investor Statements from commitments index page') do
   # click_on("Generate Investor Statement") is too broad and can click a hidden element, leaving the page empty.
   find("a", text: "Generate Investor Statement", visible: true, wait: 5).click
   expect(page).to have_content("Generate Investor Statements For : #{@fund.name}", wait: 10)
-  sleep(0.5)
+  # Was sleep(0.5): the execute_script calls below need the allocation form's hidden date inputs,
+  # so wait for exactly that (hidden inputs, hence visible: :all)
+  expect(page).to have_css("form[action*='allocate'] input[name='start_date']", visible: :all)
   @start_date = Time.zone.parse("01/01/2022")
   @end_date = Time.zone.parse("31/12/2022")
   start_iso = @start_date.to_date.iso8601

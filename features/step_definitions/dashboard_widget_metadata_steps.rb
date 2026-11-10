@@ -67,7 +67,7 @@ Then('the {string} hidden field should contain {string}') do |field_name, conten
     while Time.now - start_time < 5
       val = find_field("dashboard_widget_#{field_name}", visible: false).value
       break if val.include?(content)
-      sleep 0.5
+      sleep 0.5 # poll interval of this wait loop - kept
     end
     expect(val).to include(content)
   end

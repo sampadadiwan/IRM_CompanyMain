@@ -84,8 +84,8 @@ end
 # ─────────────────────────────────────────────────────────────────────────────
 
 When('I visit the investor kyc edit form') do
+  # No sleep(1): visit returns once the page has loaded and its Stimulus controllers connected
   visit(edit_investor_kyc_path(@investor_kyc))
-  sleep(1)
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -105,7 +105,7 @@ def ensure_step_visible(display_step)
     "$('#step-#{display_step}').show();" \
     "$('div.setup-panel div a[href=\"#step-#{display_step}\"]').removeClass('disabled')"
   )
-  sleep(0.3)
+  # No sleep(0.3): jQuery show() is synchronous, and the fill_in that follows waits for the field
 end
 
 # Fills in the single custom field on the given display step, then advances to the next.
@@ -126,8 +126,8 @@ When('I fill in {string} for the custom field on display step {int} and advance'
   end
   @dynamic_field_values[fcf.name] = value
 
+  # No sleep(1): the next step's ensure_step_visible already gives the panel a 1 s look
   click_on("Next")
-  sleep(1)
 end
 
 # Fills in the custom field on the final display step, then submits the form.
@@ -147,8 +147,8 @@ When('I fill in {string} for the custom field on display step {int} and save') d
   @dynamic_field_values[fcf.name] = value
 
   # The Save button on the last step calls interim-save#submit which does form.submit().
-  click_on("Save")
-  sleep(2)
+  # Was sleep(2) before the reload: wait for that submission's response page (page_load_helpers.rb)
+  wait_for_page_after(timeout: 2) { click_on("Save") }
 
   @investor_kyc.reload
 end
@@ -176,8 +176,8 @@ end
 # ─────────────────────────────────────────────────────────────────────────────
 
 When('I visit the investor kyc show page') do
+  # No sleep(1): visit returns once the page has loaded; the assertions that follow wait too
   visit(investor_kyc_path(@investor_kyc))
-  sleep(1)
 end
 
 # The display_custom_fields partial renders each non-nil custom field value in a <td>.

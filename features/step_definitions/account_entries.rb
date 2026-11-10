@@ -58,9 +58,9 @@ end
 
 Given("that Account Entries are allocated") do
 	visit allocate_form_fund_path(@fund.id, run_allocations: true)
-	sleep(1)
+	# No sleeps: click_on waits for the form, and every step that follows waits for the run's own
+	# result (eventually on AllocationRun, or the locked-period error text)
 	click_on("Submit")
-	sleep(1)
 end
 
 Then("I see AllocationRun created") do
@@ -81,7 +81,9 @@ end
 Given("I lock the AllocationRun") do
 	first('tbody tr').find('.dtr-control').click
 	find(:css, "button[aria-label='Lock']").click
-	sleep(1)
+	# Was sleep(1): the next step visits/submits again, so let the lock request land first - its
+	# redirect carries one of these flashes. Non-raising, like the sleep
+	page.has_content?(/AllocationRun locked successfully|Failed to lock AllocationRun/)
 end
 
 Then("I get the error on AllocationRun creation") do

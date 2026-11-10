@@ -682,7 +682,7 @@ end
 Given('the agent answers slowly {string}') do |text|
   stub_agent_reply(text:)
   allow_any_instance_of(GenericChatAgent).to receive(:execute_chat).and_wrap_original do |_original, ctx, **|
-    sleep 1.5
+    sleep 1.5 # kept: a deliberately slow stubbed reply, so the pending state can be checked
     ctx[:ai_response] = text
     true
   end

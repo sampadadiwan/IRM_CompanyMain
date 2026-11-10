@@ -171,6 +171,7 @@ if respond_to?(:After, true)
       status = $!.is_a?(SystemExit) ? $!.status : 0
 
       watchdog = Thread.new do
+        # KEEP: a shutdown-hang watchdog's timer, not a wait in a test step
         sleep 60
         begin
           File.open("tmp/cucumber_shutdown_hang_#{Process.pid}.log", 'w') do |f|

@@ -52,7 +52,8 @@ end
 # bar on the host record's page, so here we wait on the frame re-rendering.
 When('I select {string} from the task {string} filter in the tab') do |option, select_id|
   within('turbo-frame#task_list') { select option, from: select_id }
-  sleep 1 # requestSubmit -> frame fetch -> re-render
+  # No sleep (was 1 s for requestSubmit -> frame fetch -> re-render): the caller's next checks wait
+  # for the re-render - the "should not see" one keeps retrying until the filtered-out row is gone
 end
 
 # Persist a row that no longer passes its own validations, written past

@@ -247,5 +247,7 @@ When('I click {string} for the pending update for {string}') do |button_label, i
 
   # Confirms in #confirmModal only if the button asks (features/support/confirm_modal_helpers.rb)
   click_and_confirm_if_asked(row.find_button(button_label))
-  sleep 1
+  # Was sleep 1: the redirect's flash (ShareholderPositionsController accept/deny) means the change
+  # is applied. Capped at that same 1 s and not asserted, so it is never stricter.
+  page.has_content?(/Update approved and applied\.|Update rejected\./, wait: 1)
 end

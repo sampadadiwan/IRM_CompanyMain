@@ -137,14 +137,15 @@ When(/^I fill the password incorrectly and submit the login page$/) do
   fill_in('user_email', with: @user.email)
   fill_in('user_password', with: "Wrong pass")
   click_on("Log In")
-  sleep(1)
+  # No sleep(1): the next step's expect waits for the error message
 end
 
 When('I fill and submit the login without password') do
   fill_in('user_email_wo_pass', with: @user.email)
-  sleep(5)
+  # No sleep(5)/sleep(2): click_on waits for the button, the form posts without Turbo (a full page
+  # load), and the next step's expect waits for the result message - the link email is sent inside
+  # that request, before the message renders
   click_on("Log In Via Email Link")
-  sleep(2)
 end
 
 
@@ -193,7 +194,9 @@ Given('I log out') do
   end
 
   visit("entities/dashboard")
-  sleep(2)
+  # Was sleep(2): let the dashboard's lazy frames finish, so the header does not re-render under
+  # the profile-menu click
+  wait_for_page_to_settle
   find("#profile_menu").click
   click_on("Log Out")
   click_on("Logout")

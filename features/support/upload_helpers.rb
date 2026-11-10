@@ -13,23 +13,38 @@ module UploadHelpers
   # Blocks until the upload of `file` (a path or a bare filename) has landed in the page's form, or
   # fails after `timeout` seconds naming the file - an upload that never completes is a real bug
   # the old sleep would have hidden until the Save step failed with something less obvious.
-  def wait_for_upload(file, timeout: 30)
+  #
+  # `within:` (a CSS selector) looks only inside that container - needed when the same file goes
+  # into several fields on one form (e.g. Offer_1_SPA.pdf for both PAN and address proof): page-wide,
+  # the second wait would see the first field's result and return before its own upload landed.
+  # `raise_on_timeout: false` returns false instead of failing, for steps replacing a fixed sleep
+  # that never failed on its own (the form's own validation still catches a missing file).
+  def wait_for_upload(file, timeout: 30, within: nil, raise_on_timeout: true)
     name = File.basename(file.to_s)
     # Read the DOM directly: the fields are hidden, which Capybara finders skip by default, and
     # the filename sits inside a JSON value, not a matchable attribute.
     script = <<~JS
-      Array.from(document.querySelectorAll(
-        '[data-single-upload-target="result"], input[type="hidden"][name$="[file]"]'
-      )).some(el => (el.value || '').includes(#{name.to_json}))
+      (() => {
+        const root = #{within ? "document.querySelector(#{within.to_json})" : 'document'};
+        if (!root) return false;
+        return Array.from(root.querySelectorAll(
+          '[data-single-upload-target="result"], input[type="hidden"][name$="[file]"]'
+        )).some(el => (el.value || '').includes(#{name.to_json}));
+      })()
     JS
     deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + timeout
     # Poll every 0.1 s: uploads finish in a few hundred ms locally, so a coarse interval would
     # give back much of what removing the sleep saved.
     until page.evaluate_script(script)
-      raise Capybara::ExpectationNotMet, "Upload of #{name} did not finish within #{timeout}s" if Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
+      if Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
+        return false unless raise_on_timeout
+
+        raise Capybara::ExpectationNotMet, "Upload of #{name} did not finish within #{timeout}s"
+      end
 
       sleep 0.1
     end
+    true
   end
 
   # Clicks the tab's Upload button, opening the "Upload / Download" menu first where the tab has

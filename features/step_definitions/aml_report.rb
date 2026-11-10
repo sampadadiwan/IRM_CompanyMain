@@ -96,10 +96,13 @@ end
 
 Then('Aml report should be generated for the kycs that have full name') do
   mock_aml
-  sleep(5)
-  @amls.each do |ik_id, count|
-    kyc = InvestorKyc.find(ik_id)
-    kyc.aml_reports.last.documents.where("name like ?", "%AML Report%").count.should == count + 1
+  # Was sleep(5): retry until the bulk request (its jobs run inline) has generated every report.
+  # &. keeps a not-yet-created report an expectation failure, which eventually retries.
+  eventually do
+    @amls.each do |ik_id, count|
+      kyc = InvestorKyc.find(ik_id)
+      expect(kyc.aml_reports.last&.documents&.where("name like ?", "%AML Report%")&.count).to eq(count + 1)
+    end
   end
 end
 
@@ -153,8 +156,9 @@ Given('I create a new InvestorKyc {string} to trigger aml report generation') do
   fill_in("#{class_name}_comments", with: @temp_investor_kyc.comments)
   click_on("Save")
   #sleep(1)
+  # The create redirect's flash means the request - including its inline AML report job - is done,
+  # so the trailing sleep(2) waited for nothing
   expect(page).to have_content("successfully")
-  sleep(2)
 end
 
 Then('I update full name to nil for the KYC') do
@@ -188,7 +192,9 @@ end
 Given('I mock aml and click on {string}') do |string|
   mock_aml
   click_on(string)
-  sleep(1)
+  # Was sleep(1): the redirect's flash (InvestorKycsController#generate_new_aml_report) means the
+  # inline report job has run. Capped at that same 1 s and not asserted, so it is never stricter.
+  page.has_content?("AML report generation initiated.", wait: 1)
 end
 
 # incident 45847776 - the "View AML Reports" link builds exactly this URL. Visiting it directly

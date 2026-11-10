@@ -124,8 +124,8 @@ When('I create a KPI report shell for {string} as of {string} with period {strin
   fill_in('kpi_report_as_of', with: as_of)
   select period, from: 'kpi_report_period'
   advance_kpi_wizard_to(:additional_details) # Save lives on the wizard's last step
-  click_on('Save')
-  sleep(1)
+  # Was sleep(1) before reading the report: wait for the save request to finish (page_load_helpers.rb)
+  wait_for_page_after(timeout: 1) { click_on('Save') }
   @kpi_report = KpiReport.order(created_at: :desc).first
 end
 
@@ -199,23 +199,25 @@ When('I attempt to send a portco notification for {string} with invalid date {st
   portco = Investor.find_by!(investor_name: portco_name)
   # CSRF protection is disabled in test mode, so we submit without a token.
   visit(kpi_reports_path)
-  page.execute_script(<<~JS)
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = '#{send_portco_notification_kpi_reports_path}';
-    [
-      ['portfolio_company_ids[]', '#{portco.id}'],
-      ['as_of', '#{bad_date}'],
-      ['period', 'Quarter']
-    ].forEach(([n, v]) => {
-      const i = document.createElement('input');
-      i.name = n; i.value = v; i.type = 'hidden';
-      form.appendChild(i);
-    });
-    document.body.appendChild(form);
-    form.submit();
-  JS
-  sleep(1)
+  # Was a sleep(1) after the submit: wait for the response page instead (page_load_helpers.rb)
+  wait_for_page_after(timeout: 1) do
+    page.execute_script(<<~JS)
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = '#{send_portco_notification_kpi_reports_path}';
+      [
+        ['portfolio_company_ids[]', '#{portco.id}'],
+        ['as_of', '#{bad_date}'],
+        ['period', 'Quarter']
+      ].forEach(([n, v]) => {
+        const i = document.createElement('input');
+        i.name = n; i.value = v; i.type = 'hidden';
+        form.appendChild(i);
+      });
+      document.body.appendChild(form);
+      form.submit();
+    JS
+  end
 end
 
 When('I send a portco notification to all portfolio companies with date {string}') do |as_of|
@@ -239,7 +241,8 @@ end
 When('I click {string} and confirm the dialog') do |button_text|
   # Try window.confirm first (used by interim-save#final); fall back to Bootstrap modal
   # (used by KpiReport submit and confirm#popup).
-  begin
+  # Was a sleep(1) at the end: wait for the confirmed submission to finish (page_load_helpers.rb)
+  wait_for_page_after(timeout: 1) do
     # A native confirm opens the instant the button is clicked, so 2 s is plenty; the default wait
     # (15 s) was spent in full on every button that uses the Bootstrap modal instead.
     page.accept_confirm(wait: 2) { click_on(button_text) }
@@ -260,7 +263,6 @@ When('I click {string} and confirm the dialog') do |button_text|
       end
     end
   end
-  sleep(1)
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -550,8 +552,8 @@ When('I attempt to submit the already-submitted KPI report directly') do
   # The UI blocks re-submission (no button shown for submitted reports).
   # Open the edit page as the logged-in portco — the absence of a submit button
   # combined with no new notification email proves the double-submit guard.
+  # No sleep(1): visit returns once the page has loaded and its Stimulus controllers connected
   visit(edit_kpi_report_path(@kpi_report))
-  sleep(1)
 end
 
 # ── Scenario 26: Tampered magic link ─────────────────────────────────────────
@@ -639,8 +641,8 @@ end
 
 # Clicks a plain link (not a button-with-confirm) — used for "View Including Staged".
 When('I click the {string} link') do |link_text|
-  click_on(link_text)
-  sleep(1)
+  # Was sleep(1): the next step reads current_url, which does not wait - so wait for the visit
+  wait_for_page_after(timeout: 1) { click_on(link_text) }
 end
 
 # Confirms the URL carries all three query params that the grid view requires.
@@ -740,11 +742,13 @@ end
 
 # Bypasses the disabled buttons (what a tampered browser could do) and submits the form as "final".
 When('I force a final submit of the KPI report form') do
-  page.execute_script(<<~JS)
-    document.getElementById('submit_action_field').value = 'final';
-    document.getElementById('kpi-report-form').requestSubmit();
-  JS
-  sleep(1)
+  # Was sleep(1): wait for the submission to finish (page_load_helpers.rb)
+  wait_for_page_after(timeout: 1) do
+    page.execute_script(<<~JS)
+      document.getElementById('submit_action_field').value = 'final';
+      document.getElementById('kpi-report-form').requestSubmit();
+    JS
+  end
 end
 
 Given('there is a second portfolio company {string}') do |name_kv|
@@ -875,16 +879,18 @@ When('I send a KPI notification to {string} as of {string} with period {string}'
   visit(kpi_reports_path)
   page.driver.post(send_portco_notification_kpi_reports_path, portfolio_company_id: portco.id, as_of: as_of, period: period) rescue nil
   # Playwright has no driver.post — submit through a tiny form built on the page instead
-  page.execute_script(<<~JS)
-    (function () {
-      const f = document.createElement('form'); f.method = 'POST'; f.action = '#{send_portco_notification_kpi_reports_path}';
-      const add = (n, v) => { const i = document.createElement('input'); i.type = 'hidden'; i.name = n; i.value = v; f.appendChild(i); };
-      add('authenticity_token', document.querySelector('meta[name="csrf-token"]')?.content || '');
-      add('portfolio_company_id', '#{portco.id}'); add('as_of', '#{as_of}'); add('period', '#{period}');
-      document.body.appendChild(f); f.submit();
-    })();
-  JS
-  sleep(1)
+  # Was a sleep(1) after it: wait for the response page instead (page_load_helpers.rb)
+  wait_for_page_after(timeout: 1) do
+    page.execute_script(<<~JS)
+      (function () {
+        const f = document.createElement('form'); f.method = 'POST'; f.action = '#{send_portco_notification_kpi_reports_path}';
+        const add = (n, v) => { const i = document.createElement('input'); i.type = 'hidden'; i.name = n; i.value = v; f.appendChild(i); };
+        add('authenticity_token', document.querySelector('meta[name="csrf-token"]')?.content || '');
+        add('portfolio_company_id', '#{portco.id}'); add('as_of', '#{as_of}'); add('period', '#{period}');
+        document.body.appendChild(f); f.submit();
+      })();
+    JS
+  end
 end
 
 Then('the generated KPI template for the report has header {string} and rows {string}') do |header_label, names|

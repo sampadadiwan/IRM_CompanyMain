@@ -183,8 +183,8 @@ When('I delete the {string} card from its menu') do |details|
   end
   # The shared Bootstrap confirmation modal, not a browser confirm dialog.
   # Found by selector rather than label — the button is translated (t_common(:proceed)).
-  find('#confirmModal #confirm_submit button[type="submit"]').click
-  sleep 1 # turbo_stream remove
+  # Was sleep 1: wait for the delete submission's response (page_load_helpers.rb)
+  wait_for_page_after(timeout: 1) { find('#confirmModal #confirm_submit button[type="submit"]').click }
 end
 
 When('I open the {string} card\'s edit form') do |details|
@@ -195,8 +195,8 @@ end
 
 When('I set the task category to {string} and save') do |category|
   select(category, from: 'task_category')
-  click_on('Save')
-  sleep 1 # turbo_stream card replace
+  # Was sleep 1: wait for the save's turbo_stream response (page_load_helpers.rb)
+  wait_for_page_after(timeout: 1) { click_on('Save') }
 end
 
 Then('I should still be on the tasks board') do
@@ -289,7 +289,8 @@ When('I pick {string} in the stakeholder filter') do |name|
   find('.ui-autocomplete li', text: name, wait: 10).click
   # The pick sets the hidden investor_id and submits; wait for that to land.
   expect(page).to have_current_path(/investor_id=\d/, wait: 10)
-  sleep 1
+  # No sleep 1: the URL only changes once the reloaded page has committed, and the steps that
+  # follow ("I should see/not see ...") wait for its content themselves
 end
 
 # The filter bar (tasks/_filter_bar) is otherwise plain auto-submit selects named
@@ -301,7 +302,8 @@ When('I select {string} from the task {string} filter') do |option, select_id|
   # filter comes back as a query param — URL-encoded, so bracketed ransack
   # params like q[tags_cont] arrive as q%5Btags_cont%5D)
   expect(page).to have_current_path(/#{Regexp.escape(CGI.escape(select_id))}=[^&]/, wait: 10)
-  sleep 1 # let the board finish rendering
+  # No sleep 1: the URL only changes once the reloaded page has committed, and the steps that
+  # follow ("I should see/not see ...", the next filter select) wait for its content themselves
 end
 
 # Capybara's drag_to does not reliably fire HTML5 drag events, so dispatch the
@@ -321,7 +323,11 @@ When('I drag the {string} board card to the {string} column') do |details, colum
     column.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer }));
     column.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer }));
   JS
-  sleep 1 # allow the PATCH + turbo_stream replace to land
+  # Was sleep 1 for the PATCH to land: poll for the task's new status instead. Capped and
+  # non-failing like the sleep - the following steps assert the outcome themselves
+  status = column_title.parameterize(separator: '_')
+  deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 5
+  sleep 0.1 until Task.exists?(id: task.id, status:) || Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
 end
 
 Then('the task {string} should be completed') do |details|
@@ -340,7 +346,7 @@ When('I toggle the completed checkbox for the task {string}') do |details|
   task = Task.all.find { |t| t.details.to_plain_text.include?(details) }
   expect(task).to be_present
   within("tr#task_#{task.id}") do
-    find('.task-done-checkbox').click
+    # Was sleep 1 after the block: wait for the requestSubmit's turbo_stream response
+    wait_for_page_after(timeout: 1) { find('.task-done-checkbox').click }
   end
-  sleep 1 # turbo_stream row replace after requestSubmit
 end

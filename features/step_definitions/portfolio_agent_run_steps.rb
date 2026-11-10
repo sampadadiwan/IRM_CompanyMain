@@ -203,8 +203,8 @@ When('the batch job completes successfully') do
 end
 
 When('the batch job completes') do
-  # Process with some failures
-  sleep 0.5 # Allow job to process
+  # Process with some failures. Nothing is queued by this step and jobs run inline in test, so
+  # the old sleep 0.5 ("allow job to process") waited for nothing.
 end
 
 Then('I should see the page title {string}') do |title|

@@ -484,14 +484,19 @@ Given('I create a new Stakeholder {string} and save') do |args|
   fill_in('investor_investor_name', with: @temp_inv.investor_name)
   select(@temp_inv.category, from: "investor_category")
   fill_in('investor_primary_email', with: @temp_inv.primary_email)
+  before = Investor.count
   click_on("Save")
-  sleep(1)
+  # Was sleep(1): Investor.last below must be the new stakeholder - wait for it (never fails)
+  wait_up_to(5) { Investor.count > before }
   @investor = Investor.last
 end
 
 When('I go to see the investor documents of the entity') do
   visit("/documents/investor?entity_id=#{@entity.id}")
-  sleep(3)
+  # Was sleep(3). The next step is often a NEGATIVE check ("I cannot see the documents"), which
+  # passes vacuously on a page that has not rendered - so wait for the documents list's frame
+  # (server-rendered inline, no lazy src) before moving on. Capped at the old 3 s, never fails.
+  page.has_css?("turbo-frame[id]", wait: 3)
 end
 
 Then('I cannot see the documents') do
@@ -556,7 +561,7 @@ When('I create a new document {string} with no file') do |args|
 
   fill_in("document_tag_list", with: @temp_document.tag_list.join(",")) if @temp_document.tag_list.present?
   # attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_access.xlsx'), make_visible: true)
-  sleep(3)
+  # No sleep(3): it covered the upload above, which is commented out; toggle_on finds its own field
   toggle_on('document_download') if @temp_document.download
   toggle_on('document_printing') if @temp_document.printing
   toggle_on('document_send_email') if @temp_document.send_email

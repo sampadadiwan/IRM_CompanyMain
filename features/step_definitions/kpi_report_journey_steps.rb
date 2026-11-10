@@ -15,7 +15,9 @@ When('I set Managed by on {string} to {string}') do |portco_name, user_name|
   visit(edit_investor_path(portco))
   select(user_name, from: 'investor_managed_by_user_id')
   click_on('Save')
-  sleep(1)
+  # Was sleep(1): the next step reads managed_by from the DB - wait for the save (never fails; that
+  # step's own expectation reports a save that did not happen)
+  wait_up_to(5) { portco.reload.managed_by&.full_name == user_name }
 end
 
 Then('{string} shows Managed by {string}') do |portco_name, user_name|

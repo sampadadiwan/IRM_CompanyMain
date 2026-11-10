@@ -1,3 +1,14 @@
+# What InvestorKycsController#create/#update put on the page once a save has finished: the
+# success flash, the submitted flash, the form's error banner or the already-submitted alert.
+KYC_SAVE_RESULT = /Investor kyc was successfully saved|KYC submitted\. The fund team has been notified|prohibited this investor_kyc from being saved|has already been submitted and cannot be edited/
+
+# Waits for the KYC save's response instead of a fixed sleep. Non-raising (has_content? just
+# returns false after the wait), so it is never stricter than the sleep it replaces - the
+# following steps still decide pass or fail.
+def wait_for_kyc_save
+  page.has_content?(KYC_SAVE_RESULT)
+end
+
 Given('I go to create InvestorKyc {string}') do |args|
   allow_any_instance_of(KycVerify).to receive(:verify_pan_card).and_return(pan_response)
   allow_any_instance_of(KycVerify).to receive(:verify_bank).and_return(bank_response)
@@ -10,7 +21,7 @@ Given('I go to create InvestorKyc {string}') do |args|
   visit(investor_kycs_path)
   click_on("New KYC")
   click_on("Individual")
-  sleep(2)
+  # No sleep(2): the find below waits for select2 to render
 
   class_name = "individual"
   find('.select2-container', visible: true).click
@@ -24,11 +35,13 @@ Given('I go to create InvestorKyc {string}') do |args|
       click_on 'Choose file'
     end
   end
-  sleep(2)
+  # Was sleep(2): wait for Uppy to land the PAN in the form. Non-fatal like the old sleep - an
+  # upload that never lands fails later, exactly where it always did
+  wait_for_upload("example_pan.jpeg", timeout: 15, raise_on_timeout: false)
   fill_in("#{class_name}_kyc_birth_date", with: @investor_kyc.birth_date)
 
   click_on("Next")
-  sleep(1)
+  # No sleep(1): the wizard pages client-side and the next fill_in/click_on waits for it
 
   fill_in("#{class_name}_kyc_address", with: @investor_kyc.address)
   fill_in("#{class_name}_kyc_corr_address", with: @investor_kyc.corr_address)
@@ -37,10 +50,11 @@ Given('I go to create InvestorKyc {string}') do |args|
   fill_in("#{class_name}_kyc_bank_account_number", with: @investor_kyc.bank_account_number)
   fill_in("#{class_name}_kyc_ifsc_code", with: @investor_kyc.ifsc_code)
   click_on("Next")
-  sleep(1)
+  # No sleep(1): the wizard pages client-side and the next fill_in/click_on waits for it
 
   click_on("Save")
-  sleep(5)
+  # Was sleep(5): wait for the save to come back (see wait_for_kyc_save)
+  wait_for_kyc_save
   @og_pan_verification_response = {}
   @og_bank_verification_response = {}
 end
@@ -75,13 +89,14 @@ Then('when the Kyc name is updated') do
   fill_in("#{class_name}_kyc_full_name", with: @investor_kyc.full_name + " Updated")
 
   click_on("Next")
-  sleep(1)
+  # No sleep(1): the wizard pages client-side and the next fill_in/click_on waits for it
 
   click_on("Next")
-  sleep(1)
+  # No sleep(1): the wizard pages client-side and the next fill_in/click_on waits for it
 
   click_on("Save")
-  sleep(1)
+  # Was sleep(1): wait for the save to come back (see wait_for_kyc_save)
+  wait_for_kyc_save
 end
 
 Then('when the Kyc PAN is updated') do
@@ -94,13 +109,14 @@ Then('when the Kyc PAN is updated') do
   fill_in("#{class_name}_kyc_PAN", with: @investor_kyc.PAN+"A")
 
   click_on("Next")
-  sleep(1)
+  # No sleep(1): the wizard pages client-side and the next fill_in/click_on waits for it
 
   click_on("Next")
-  sleep(1)
+  # No sleep(1): the wizard pages client-side and the next fill_in/click_on waits for it
 
   click_on("Save")
-  sleep(1)
+  # Was sleep(1): wait for the save to come back (see wait_for_kyc_save)
+  wait_for_kyc_save
 end
 
 Given('Entity Bank verification is enabled') do
@@ -127,14 +143,15 @@ Then('when the Kyc Bank Account number is updated') do
   class_name = "individual"
 
   click_on("Next")
-  sleep(1)
+  # No sleep(1): the wizard pages client-side and the next fill_in/click_on waits for it
 
   fill_in("#{class_name}_kyc_bank_account_number", with: @investor_kyc.bank_account_number + "5")
   click_on("Next")
-  sleep(1)
+  # No sleep(1): the wizard pages client-side and the next fill_in/click_on waits for it
 
   click_on("Save")
-  sleep(1)
+  # Was sleep(1): wait for the save to come back (see wait_for_kyc_save)
+  wait_for_kyc_save
 end
 
 Then('when the Kyc Bank IFSC is updated') do
@@ -146,14 +163,15 @@ Then('when the Kyc Bank IFSC is updated') do
   class_name = "individual"
 
   click_on("Next")
-  sleep(1)
+  # No sleep(1): the wizard pages client-side and the next fill_in/click_on waits for it
 
   fill_in("#{class_name}_kyc_ifsc_code", with: @investor_kyc.ifsc_code+"1")
   click_on("Next")
-  sleep(1)
+  # No sleep(1): the wizard pages client-side and the next fill_in/click_on waits for it
 
   click_on("Save")
-  sleep(1)
+  # Was sleep(1): wait for the save to come back (see wait_for_kyc_save)
+  wait_for_kyc_save
 end
 
 def pan_response

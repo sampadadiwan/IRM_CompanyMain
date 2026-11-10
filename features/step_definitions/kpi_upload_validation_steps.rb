@@ -506,8 +506,27 @@ end
 
 # Bypasses the disabled Save button (what a tampered browser could do) — the server must refuse.
 When('I force a save of the KPI report form') do
-  page.execute_script("document.getElementById('kpi-report-form').requestSubmit();")
-  sleep(1)
+  # Mark the window and note Turbo's submit-end, then submit: done = the response arrived (Turbo)
+  # or the window was replaced (a native submit)
+  page.execute_script(<<~JS)
+    window.__kpiForcedSubmitPending = true;
+    document.addEventListener('turbo:submit-end', () => { window.__kpiForcedSubmitEnded = true; }, { once: true });
+    document.getElementById('kpi-report-form').requestSubmit();
+  JS
+  # Was sleep(1). The next step asserts no report was created, so the refused request must have
+  # finished; wait for that, capped at the same 1 s and never raising (a submit the page's own
+  # validation stops never sends a request, so it simply takes the full 1 s, as before)
+  deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 1
+  while Process.clock_gettime(Process::CLOCK_MONOTONIC) < deadline
+    done = begin
+      page.evaluate_script("window.__kpiForcedSubmitPending !== true || window.__kpiForcedSubmitEnded === true")
+    rescue StandardError
+      false # the window is mid-navigation - look again
+    end
+    break if done
+
+    sleep 0.1
+  end
 end
 
 Then('no KPI report exists for {string} other than the shell') do |portco_name|

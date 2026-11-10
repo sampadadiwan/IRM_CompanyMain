@@ -13,9 +13,8 @@ When('I go to the dashboard page') do
 end
 
 When('I select {string} from the category filter dropdown') do |category|
-  select category, from: 'category_filter'
-  # Wait for reload
-  sleep 1
+  # Wait for the filter's auto-submit reload - was sleep 1 (page_load_helpers.rb)
+  wait_for_page_after(timeout: 1) { select category, from: 'category_filter' }
 end
 
 When('I click on {string} in the sidebar') do |link_text|

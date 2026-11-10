@@ -121,7 +121,8 @@ When('I click {string} for the task {string}') do |action, task_details|
       click_on(action)
     end
   end
-  sleep(1)
+  # No sleep(1): every step that follows ("I should see", check/uncheck a field) waits for its
+  # own element
 end
 
 Then('the task {string} should be recurring') do |task_details|

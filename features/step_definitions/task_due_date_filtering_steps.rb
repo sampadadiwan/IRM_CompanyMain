@@ -6,6 +6,9 @@
 
 When('I select {string} from the due date filter dropdown') do |label|
   select label, from: 'due_filter'
-  # Wait for the auto-submit reload
-  sleep 1
+  # Was sleep 1: the select submits a GET form that navigates the page (_filter_bar.html.erb), so
+  # wait for the URL to carry the chosen value - the next step may click "Board", whose link is
+  # built from the current params. Non-raising, like the sleep: the assertions that follow decide
+  value = find_field('due_filter').value
+  page.has_current_path?(/[?&]due_filter=#{Regexp.escape(value)}(&|$)/)
 end

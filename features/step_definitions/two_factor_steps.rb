@@ -210,9 +210,9 @@ end
 When("I enter an invalid TOTP code {int} times") do |count|
   count.times do
     fill_in("otp_code", with: "000000")
-    click_on("Verify")
-    # Wait for page to reload between attempts
-    sleep(0.5) unless count == 1
+    # Wait for the page to reload between attempts - was sleep(0.5); now waits for the actual
+    # response so the next fill_in cannot hit the page being left (page_load_helpers.rb)
+    wait_for_page_after(timeout: 0.5) { click_on("Verify") }
   end
 end
 

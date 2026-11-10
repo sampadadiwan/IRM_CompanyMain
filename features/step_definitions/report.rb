@@ -5,6 +5,8 @@ Given('I ransack filter the {string}') do |filter_for|
 end
 
 Given('I save the filtered data as a report {string}') do |string|
+  # Remembered so the next step can wait for this report to be saved
+  @report_name = string
   find('a[data-bs-original-title="Save Report"] i.ti.ti-database').click
   fill_in('report_name', with: string)
   fill_in('report_category', with: "#{string} category")
@@ -14,7 +16,9 @@ Given('I save the filtered data as a report {string}') do |string|
 end
 
 Then('I should be able to view the report details') do
-  sleep 2
+  # Was sleep 2: the previous step's Save must have created the report before Report.last is read
+  # (capped at the old 2 s, never fails - the have_content checks below catch a missing report)
+  wait_up_to(2) { Report.exists?(name: @report_name) } if @report_name
   @report ||= Report.last
   visit("/reports/#{@report.id}")
   expect(page).to have_content(@report.name)
@@ -49,7 +53,9 @@ Given('I save the filtered data as a report {string} with Ai prompt and notifica
   check('send-notification-toggle')
   fill_in('report_notification_recipients', with: recipient)
   click_on('Save')
-  sleep 2
+  # Was sleep 2: the next step reads Report.last - wait for this report to be saved (capped at
+  # the old 2 s, never fails)
+  wait_up_to(2) { Report.exists?(name: report_name) }
 end
 
 Then('the report should have the expected data') do

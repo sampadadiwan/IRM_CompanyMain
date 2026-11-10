@@ -16,8 +16,11 @@ Given('I filter the AEs') do
   # The default condition row filters on reporting_date (a date attribute), so the
   # value field renders as the locale-date widget rather than the plain text field.
   find('.value-field-date input[type="text"]').set('01/01/2020')
+  mark_page_before_submit
   find('button.search-button[type="submit"]').click
-  sleep(2)
+  # Was sleep(2). The next step clicks Download, which the unfiltered page has too - wait for the
+  # filtered results page to replace this one (capped at the old 2 s, never fails)
+  wait_up_to(2) { page_replaced? }
 end
 
 IGNORED_JOBS = [DocumentPostCreateJob].freeze
@@ -131,7 +134,9 @@ Given('I filter and pivot the AEs') do
   # value field renders as the locale-date widget rather than the plain text field.
   find('.value-field-date input[type="text"]').set('01/01/2020')
   check('q_pivot')
-  sleep(0.5)
+  # No sleep(0.5): checking the box is synchronous, any change handler has run by the next click
+  mark_page_before_submit
   find('button.search-button[type="submit"]').click
-  sleep(2)
+  # Was sleep(2): wait for the pivoted results page (capped at the old 2 s, never fails)
+  wait_up_to(2) { page_replaced? }
 end

@@ -29,7 +29,8 @@ Given('I create an investment {string}') do |arg1|
   fill_in('investment_spv', with: @investment.spv)
   fill_in('investment_investment_date', with: @investment.investment_date)
 
-  sleep(1)
+  # No sleep(1): click_on waits for Save, and its mousedown blurs the date field first, so the
+  # field's change handlers have run before the form submits
   click_on("Save")
 end
 
@@ -51,7 +52,9 @@ Then('when I edit the investment {string}') do |arg1|
   fill_in('investment_investment_date', with: @investment.investment_date)
 
   click_on("Save")
-  sleep(1)
+  # Was sleep(1): the update redirect's flash means the change is saved. Capped at that same 1 s
+  # and not asserted, so an invalid (re-rendered) form is no stricter.
+  page.has_content?("Investment was successfully updated.", wait: 1)
   @investment = Investment.last
 
 end

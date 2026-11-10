@@ -212,12 +212,33 @@ When('{string} signs in') do |first_name|
   log_in(user)
 end
 
+# Runs `form_js` (which builds a form and calls submit()) and waits for the browser to load the
+# response page, instead of a fixed sleep. A marker set on the current window disappears with it, so
+# "marker gone" means the old document was replaced - even when the response lands back on the same
+# URL (a refused request redirected home). Capped at `cap` seconds and never raises, like the sleep
+# it replaces; the steps after it assert on the outcome.
+def submit_scripted_form(form_js, cap:)
+  page.execute_script("window.__scriptedFormPending = true;")
+  page.execute_script(form_js)
+  deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + cap
+  while Process.clock_gettime(Process::CLOCK_MONOTONIC) < deadline
+    begin
+      break unless page.evaluate_script("window.__scriptedFormPending === true")
+    rescue StandardError
+      # The old document is being torn down mid-navigation - not loaded yet, look again
+      nil
+    end
+    sleep 0.1
+  end
+end
+
 # Builds and submits a real DELETE form from any rendered page, the same workaround the role update
 # steps use (the Playwright driver has no rack_test style delete).
 When('{string} sends a delete request for the extract ending {string}') do |_first_name, end_date|
   @extract = @extracts.find { |e| e.end_date == Date.parse(end_date) }
   visit(root_path)
-  page.execute_script(<<~JS)
+  # Was execute_script + sleep(2): waits for the DELETE's response page, capped at the same 2 s
+  submit_scripted_form(<<~JS, cap: 2)
     (function () {
       const f = document.createElement('form'); f.method = 'POST'; f.action = '#{portfolio_report_extract_path(@extract)}';
       const add = (n, v) => { const i = document.createElement('input'); i.type = 'hidden'; i.name = n; i.value = v; f.appendChild(i); };
@@ -226,7 +247,6 @@ When('{string} sends a delete request for the extract ending {string}') do |_fir
       document.body.appendChild(f); f.submit();
     })();
   JS
-  sleep(2)
 end
 
 Then('the policy refuses {string} to delete the extract') do |first_name|
@@ -781,6 +801,9 @@ When('I choose the template {string} in row {int}') do |template_label, number|
 end
 
 def row_option_texts(number, field)
+  # Wait for the row first - the script below reads the DOM once and does not wait for the
+  # options page to render
+  parts_row(number)
   index = number - 1
   page.evaluate_script(<<~JS)
     Array.from(document.querySelectorAll("[data-report-parts-target='row']")[#{index}]
@@ -817,7 +840,9 @@ Then('{string} is shown on the options page') do |message|
 end
 
 Then('nothing was queued') do
-  sleep 1
+  # No sleep 1: every step before this one already waits for the request's response (a "... is
+  # shown" assertion, or post_options_directly's submit_scripted_form), and the jobs are queued
+  # inside that request, so nothing more can arrive
   expect(@queued_runs).to be_empty
   expect(@queued_extracts).to be_empty
 end
@@ -827,6 +852,7 @@ Then('one report run was queued') do
 end
 
 def eventually_queued_runs
+  # KEEP: poll interval of a bounded wait, not a fixed delay
   Timeout.timeout(5) { sleep 0.2 while @queued_runs.empty? }
   @queued_runs
 rescue Timeout::Error
@@ -845,6 +871,7 @@ Then('the queued run has no additional reports') do
 end
 
 Then('extracts were queued only for {string}') do |report_name|
+  # KEEP: poll interval of a bounded wait, not a fixed delay
   Timeout.timeout(5) { sleep 0.2 while @queued_extracts.empty? }
   expect(@queued_extracts.pluck(1)).to eq([@reports.fetch(report_name).id])
   expect(@queued_extracts.first.first.size).to eq(Investor.portfolio_companies.count)
@@ -854,7 +881,8 @@ end
 def post_options_directly(fields)
   visit(legacy_bulk_generate_portfolio_reports_path)
   inputs = fields.map { |name, value| "add(#{name.to_json}, #{value.to_s.to_json});" }.join("\n")
-  page.execute_script(<<~JS)
+  # Was execute_script + sleep 2: waits for the options POST's response page, capped at the same 2 s
+  submit_scripted_form(<<~JS, cap: 2)
     (function () {
       const f = document.createElement('form'); f.method = 'POST'; f.action = '#{legacy_bulk_generate_options_portfolio_reports_path}';
       const add = (n, v) => { const i = document.createElement('input'); i.type = 'hidden'; i.name = n; i.value = v; f.appendChild(i); };
@@ -863,7 +891,6 @@ def post_options_directly(fields)
       document.body.appendChild(f); f.submit();
     })();
   JS
-  sleep 2
 end
 
 def posted_company_fields(extra_company_ids = [])

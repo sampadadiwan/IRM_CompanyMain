@@ -143,8 +143,8 @@ When('I fill in the {string} validation input with {string}') do |label_text, va
 end
 
 When('I save the form type') do
-  click_on "Save"
-  sleep(1)
+  # Was sleep(1) before the reload: wait for the save's response (page_load_helpers.rb)
+  wait_for_page_after(timeout: 1) { click_on "Save" }
   @form_type.reload
 end
 
@@ -219,8 +219,9 @@ When('I submit the investor form') do
       });
     });
   JS
-  click_on "Save"
-  sleep(2)
+  # Was sleep(2): wait for the response page, so the next step's "I should see ..." reads the
+  # result and not the form being left (labels like "required" are on both)
+  wait_for_page_after(timeout: 2) { click_on "Save" }
 end
 
 Then('I should see {string} on the page') do |text|

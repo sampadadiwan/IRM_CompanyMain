@@ -322,9 +322,8 @@ Then('the user goes to the fund e-signature report') do
   ESignature.create!(user: @user, entity: @fund.entity, document: @template_dup, status: "failed")
   visit(fund_path(@fund))
   click_on("Reports")
-  sleep(0.5)
+  # No sleeps: find waits for the menu, and click_on waits for the hovered item to be visible
   find("#basic_reports").hover
-  sleep(0.5)
   click_on("eSignatures Report")
   # sleep((2)
 end

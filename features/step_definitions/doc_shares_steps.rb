@@ -55,7 +55,8 @@ Then('I should be able to view the document {string}') do |string|
   expect(page).to have_content(string)
   expect(page).to have_content(@document.name)
   expect(page).to have_content(@document.text.to_plain_text)
-  sleep(10)
+  # No sleep(10): DocSharesController#view saves view_count/viewed_at before rendering, so the
+  # content above being on the page already means the next steps' DB checks will see them
 end
 
 

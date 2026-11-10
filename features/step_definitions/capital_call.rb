@@ -307,8 +307,11 @@ When('I recompute the capital call fees') do
     click_on("Actions")
   end
   click_on("Recompute Call")
+  mark_page_before_submit
   click_on("Proceed")
-  sleep(2)
+  # Was sleep(2). recompute_fees runs its job (inline in tests) and redirects back to the call - wait
+  # for that redirect to replace the page (capped at the old 2 s, never fails)
+  wait_up_to(2) { page_replaced? }
 end
 
 Then('The remittances should have the updated proper fees and call amount') do
@@ -871,7 +874,7 @@ Then('when the capital call docs are generated') do
                           .where(updated_at: started_at..).distinct.count(:owner_id)
       break if generated >= cc.capital_remittances.count
 
-      sleep 0.25
+      sleep 0.25 # poll interval of this wait loop - kept
     end
   end
 end

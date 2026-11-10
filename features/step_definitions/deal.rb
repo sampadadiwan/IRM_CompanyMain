@@ -70,18 +70,22 @@ When('I click on a Kanban Card and edit the form') do
   ##sleep(0.25)
   fill_in('Tags', with: "Random, Tag")
   click_button('Save')
-  sleep(1)
+  # Was sleep(1): let the save land before closing the panel (capped at the old 1 s, never fails)
+  wait_up_to(1) { deal_investor.reload.tags.to_s.include?("Random") }
   first(".offcanvas-close").click
-  expect(all(".kanban-card").first.text).to include("Random")
-  expect(all(".kanban-card").first.text).to include("Tag")
+  # The board re-renders the card from a broadcast - retry the read until it has
+  eventually do
+    expect(all(".kanban-card").first.text).to include("Random")
+    expect(all(".kanban-card").first.text).to include("Tag")
+  end
 end
 
 When("I click on a Kanban Card's tags") do
   KanbanCardIndex.import!
   expect(all(".kanban-card").count).to(eq(2))
   click_link("Random")
-  sleep(2)
-  expect(all(".kanban-card").count).to(eq(1))
+  # Was sleep(2) + an instant count: have_css(count:) waits for the filtered board
+  expect(page).to have_css(".kanban-card", count: 1)
 end
 
 When("I move card from one column to another") do
@@ -97,8 +101,8 @@ When("I move card from one column to another") do
     );
   JS
   all(".move-to-next-column").first.click
-  sleep(3)
-  expect(KanbanCard.first.audits.last.audited_changes.keys).to(include("kanban_column_id"))
+  # Was sleep(3): retry the audit check until the move has been saved
+  eventually { expect(Array(KanbanCard.first.audits.last&.audited_changes&.keys)).to(include("kanban_column_id")) }
 end
 
 Then('an deal should be created') do
@@ -384,11 +388,10 @@ def select_investor_and_save(investor_id, tags)
   ##sleep(2)
   investor = Investor.find(investor_id)
   first('#add_new_card').click
-  sleep(1)
+  # No sleeps: select waits for the new card form's field, and tags is a plain text field
   select(investor.investor_name, from: "deal_investor_investor_id")
   input_field = find_by_id('deal_investor_tags')
   input_field.set(tags)
-  sleep(0.5)
   click_button('Save')
   page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
   expect(page).to have_content("Deal Investor was successfully created", wait: 10)
@@ -443,8 +446,10 @@ def select_investor_by_name_and_save(name, tags)
   input_field = find_by_id('deal_investor_tags')
   input_field.set(tags)
   ##sleep(0.5)
+  before = DealInvestor.count
   click_button('Save')
-  sleep(5)
+  # Was sleep(5): wait for the deal investor to be created (capped at the old 5 s, never fails)
+  wait_up_to(5) { DealInvestor.count > before }
 end
 
 When('I click on the action dropdown and create a Kanban Column') do
@@ -452,8 +457,8 @@ When('I click on the action dropdown and create a Kanban Column') do
   ##sleep(0.5)
   find_by_id('kanban_column_name').set('New Column')
   click_button('Save')
-  sleep(1)
-  expect(page.text).to(include('New Column'))
+  # Was sleep(1) + an instant page.text read: have_content waits for the new column
+  expect(page).to have_content('New Column')
 end
 
 Then('I should see the error "{string}"') do |string|
@@ -477,7 +482,7 @@ When('I click on the action dropdown and dont select any Investor and save') do
   first('#add_new_card').click
   ##sleep(1)
   click_button('Save')
-  sleep(1)
+  # No sleep(1): the next step ("I should see the error") waits for the message
 end
 
 Then('i click on the details button') do
@@ -525,7 +530,9 @@ When('I edit the deal "card_view_attrs={string}"') do |string|
   #   find('li.select2-results__option', text: "#{attr}").click
   # end
   click_on("Save")
-  sleep(2)
+  # Was sleep(2): wait for the update to save before the next step reloads the page (capped at
+  # the old 2 s, never fails)
+  wait_up_to(2) { @deal.reload.tags.to_s.include?("Deal Tag") }
 end
 
 
@@ -619,7 +626,8 @@ Given('I add widgets for the deal') do
     raise Capybara::ElementNotFound, 'Unable to find an enabled file input for widget upload' unless widget_file_input
 
     widget_file_input.set(widget_upload_path)
-    sleep(0.5)
+    # Was sleep(0.5): wait for Uppy's direct upload to land in the form (never fails, like the sleep)
+    wait_for_upload(widget_upload_path, timeout: 5, raise_on_timeout: false)
     click_on("Save")
     expect(page).to have_content("successfully")
   end
@@ -692,8 +700,11 @@ def select_investor_name_and_save(investor_name, tags)
   select(investor_name, from: "deal_investor_investor_id")
   input_field = find_by_id('deal_investor_tags')
   input_field.set(tags) if tags.present?
+  before = DealInvestor.count
   click_button('Save')
-  sleep(2)
+  # Was sleep(2): the caller reloads and reads DealInvestor.last - wait for the create (capped at
+  # the old 2 s, never fails)
+  wait_up_to(2) { DealInvestor.count > before }
 end
 
 Given('I give deal access to {string}') do |investor_name|
@@ -708,8 +719,10 @@ Given('I give deal access to {string}') do |investor_name|
     find('.select2-selection--multiple').click
     find('.select2-search__field').set(investor_name)
     find('li.select2-results__option', text: investor_name).click
+    before = AccessRight.count
     click_on("Save")
-    sleep(1)
+    # Was sleep(1): wait for the grant to be saved (capped at the old 1 s, never fails)
+    wait_up_to(1) { AccessRight.count > before }
   else
     investor = Investor.find_by!(investor_name: investor_name)
     AccessRight.find_or_create_by!(owner: @deal, entity_id: @deal.entity_id, access_to_investor_id: investor.id, access_type: "Deal")
@@ -743,8 +756,10 @@ Given('I give {string} access to {string} from the deal access overview') do |ac
     # No cascade checkbox any more - AccessRightsController#create forces cascade
     # on every Folder grant, because a right on the folder alone grants nothing.
 
+    before = AccessRight.count
     click_on("Save")
-    sleep(1)
+    # Was sleep(1): wait for the grant to be saved (capped at the old 1 s, never fails)
+    wait_up_to(1) { AccessRight.count > before }
   else
     investor = Investor.find_by!(investor_name: investor_name)
     # Mirror the UI branch exactly: it grants on the "Deal Documents" child folder
@@ -806,10 +821,12 @@ When('I click Deal Documents in the overview') do
 end
 
 Then('I should see the deal documents') do
-  sleep(1)
+  # Was sleep(1): current_url must be the documents list the previous step's click opened - wait
+  # for its folder heading (never fails; the assertion below checks it properly)
+  page.has_css?("#docs_folder_path")
   temp_url = current_url+"&&no_folders=true"
   visit(temp_url)
-  sleep(1)
+  # No sleep(1): the have_css below waits for the page
   # The folder path is the list's heading (documents/_index #docs_folder_path); an investor sees just the folder name
   expect(page).to have_css("#docs_folder_path", text: "Deal Documents")
   @deal.deal_documents_folder.documents.each do |doc|
@@ -867,7 +884,8 @@ When('I edit the deal grid columns with field {string} label {string} and positi
 
   _add_grid_column_row(field, label, position)
   click_button('Save')
-  sleep(1)
+  # Was sleep(1) (capped at that, never fails)
+  wait_for_deal_form_saved(1)
 end
 
 # Adds a single grid column row without saving (used when building multiple rows).
@@ -882,7 +900,17 @@ end
 When('I save the deal form') do
   _ensure_deal_statuses_present_in_form
   click_button('Save')
-  sleep(1)
+  # Was sleep(1) (capped at that, never fails)
+  wait_for_deal_form_saved(1)
+end
+
+# deals#update answers with update.turbo_stream.erb: on success the form's turbo frame becomes a
+# blank partial (the Save button goes), on failure an alert is prepended to it. Either means the
+# request is done; the caller's next step reads the deal from the DB.
+def wait_for_deal_form_saved(max_seconds)
+  wait_up_to(max_seconds) do
+    page.has_no_button?("Save", wait: false) || page.has_css?("turbo-frame[id^='deal_form'] .alert", wait: false)
+  end
 end
 
 # Navigates to the deal show page and ensures the Investors tab / list view is visible.
@@ -923,11 +951,10 @@ end
 # Helper — appends one grid column row in the deal form
 # ---------------------------------------------------------------------------
 def _add_grid_column_row(field, label, position)
+  rows_before = all("[data-deal-grid-columns-target='row']", wait: false).size
   click_button('+ Add Column')
-  sleep(0.3)
-
-  # The new row is the last one in the rows container
-  row = all("[data-deal-grid-columns-target='row']").last
+  # Was sleep(0.3) then the last row - which could still be an older row. Wait for the new one.
+  row = all("[data-deal-grid-columns-target='row']", minimum: rows_before + 1).last
   within(row) do
     select_option = find("[data-field='field']")
     select_option.find("option[value='#{field}']").select_option
@@ -937,8 +964,8 @@ def _add_grid_column_row(field, label, position)
     pos_select = find("[data-field='position']")
     pos_select.find("option[value='#{position.downcase}']").select_option
   end
-
-  sleep(0.2)
+  # No sleep(0.2): deal_grid_columns_controller.js re-serializes the hidden JSON on each change
+  # event, which runs synchronously as the select changes
 end
 
 def _ensure_deal_statuses_present_in_form
@@ -977,7 +1004,8 @@ When('I edit the deal analytics stats to {string}') do |labels_csv|
   end
 
   click_button('Save')
-  sleep(1)
+  # Was sleep(1) (capped at that, never fails)
+  wait_for_deal_form_saved(1)
 end
 
 Then('the deal should have analytics stats {string}') do |keys_csv|

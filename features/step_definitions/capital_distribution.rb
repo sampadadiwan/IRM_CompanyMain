@@ -1,3 +1,21 @@
+# Waits until every payment of `distribution` has a template-generated document touched since
+# `started_at`, for at most `cap` seconds, and carries on either way. Replaces a fixed sleep after
+# "Generate Documents" (same pattern as the capital call doc-generation step in capital_call.rb):
+# returns as soon as generation finishes, never later than the old sleep, and never fails on its
+# own - a payment that legitimately gets no notice is no slower and no stricter than before.
+def wait_for_distribution_notices(distribution, started_at, cap:)
+  payments = distribution.capital_distribution_payments
+  deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + cap
+  until Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
+    generated = Document.where(owner: payments).where.not(from_template_id: nil)
+                        .where(updated_at: started_at..).distinct.count(:owner_id)
+    break if generated >= payments.count
+
+    # Poll interval, not a wait for anything in particular
+    sleep 0.25
+  end
+end
+
 When("I create a Capital Distribution {string}") do |args|
   visit(fund_path(@fund))
   @capital_distribution = FactoryBot.build(:capital_distribution, fund: @fund)
@@ -643,8 +661,11 @@ Given('We Generate documents for the capital distribution') do
     click_on("Actions")
     click_on("Generate Documents")
   end
+  # Docs touched from here on are this run's (a regenerate updates the existing notice)
+  started_at = Time.current
   click_on("Proceed")
-  sleep(5) # Wait for the job to complete
+  # Was sleep(5): returns once every payment has its notice, capped at the old 5 s and non-fatal
+  wait_for_distribution_notices(@capital_distribution, started_at, cap: 5)
   # With :inline job adapter the job runs synchronously and the completion flash
   # ("N documents generated successfully") replaces the async "started" flash
   # before this assertion could catch it. Accept either message.
@@ -801,8 +822,11 @@ Given('dist notice is generated for the dist payments') do
     click_on("Actions")
     click_on("Generate Documents")
   end
+  # Docs touched from here on are this run's (a regenerate updates the existing notice)
+  started_at = Time.current
   click_on("Proceed")
-  sleep(10) # Wait for the job to complete
+  # Was sleep(10): returns once every payment has its notice, capped at the old 10 s and non-fatal
+  wait_for_distribution_notices(@capital_distribution, started_at, cap: 10)
   # With :inline job adapter the job runs synchronously and the completion flash
   # ("N documents generated successfully") replaces the async "started" flash
   # before this assertion could catch it. Accept either message.
@@ -842,7 +866,9 @@ Given('I trigger notification for the distribution') do
     click_on("Send Payment Notifications")
   end
   click_on("Proceed")
-  sleep(5) # Wait for the job to complete
+  # Was sleep(5): the notification job runs inline inside this request, so its redirect flash
+  # means the sends are done. Non-raising, like the sleep - the next step checks the sends
+  page.has_content?("Notification sending process started")
 end
 
 Then('the notification must be sent to the investors where the distribution notice was generated') do

@@ -63,8 +63,8 @@ end
 # ── Navigation (company admin) ────────────────────────────────────────────────
 
 When('I visit the new investor KYC page') do
+  # No sleep(1): visit returns once the page has loaded and its Stimulus controllers connected
   visit new_investor_kyc_path
-  sleep(1)
 end
 
 

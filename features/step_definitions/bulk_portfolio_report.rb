@@ -50,8 +50,10 @@ Given('I trigger report generation') do
   @extracts_count_by_company = companies.to_h do |pc|
     [pc.id, PortfolioReportExtract.where(portfolio_report_id: @portfolio_report.id, portfolio_company_id: pc.id).count]
   end
-  click_on "Generate Report"
-  sleep 5
+  # Was sleep 5 before the next step's DB checks: wait for the submission's response instead - jobs
+  # run inline, so the reports exist once the server answers (page_load_helpers.rb; capped and
+  # non-failing like the sleep)
+  wait_for_page_after(timeout: 5) { click_on "Generate Report" }
   # expect(page).to have_content("Portfolio Report Generation completed", wait: 5)
   # expect(page).to have_content("Queued report generation for", wait: 5)
 end
@@ -161,8 +163,9 @@ Given('I select the portfolio companies for bulk generation') do
       sel.dispatchEvent(new Event('change', { bubbles: true }));
     JS
   end
-  click_on "Next"
-  sleep 2
+  # Was sleep 2: wait for the options page instead, so the next step's fill_in cannot land on the
+  # page being left (page_load_helpers.rb)
+  wait_for_page_after(timeout: 2) { click_on "Next" }
 end
 
 # Snapshot per-company extract counts, stub the LLM, then click "Generate Extracts Only" on the
@@ -174,8 +177,8 @@ Given('I trigger extract generation') do
   @extracts_count_by_company = companies.to_h do |pc|
     [pc.id, PortfolioReportExtract.where(portfolio_report_id: @portfolio_report.id, portfolio_company_id: pc.id).count]
   end
-  click_on "Generate Extracts Only"
-  sleep 5
+  # Was sleep 5: wait for the submission's response (inline jobs, so the extracts exist by then)
+  wait_for_page_after(timeout: 5) { click_on "Generate Extracts Only" }
 end
 
 # Asserts a NEW extract was created for every selected company, with data present or absent.

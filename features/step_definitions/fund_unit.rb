@@ -55,7 +55,7 @@ Given('Given I upload a fund unit settings {string} for the fund') do |file_name
   visit(fund_url(@fund))
   click_on("Actions")
   click_on("Fund Unit Settings")
-  sleep(1)
+  # No sleep(1): click_on waits for the settings page's Upload button
   click_on("Upload")
   #sleep((6)
   fill_in('import_upload_name', with: "Test Fund Unit Settings Upload")

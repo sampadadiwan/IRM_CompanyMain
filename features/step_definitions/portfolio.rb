@@ -31,7 +31,9 @@ include CurrencyHelper
     fill_in('portfolio_investment_quantity', with: @new_portfolio_investment.quantity)
 
     click_on "Save"
-    sleep(1)
+    # Was sleep(1): the create redirect's flash means the row is saved for the next step's DB
+    # check. Capped at that same 1 s and not asserted, so a re-rendered (invalid) form is no stricter.
+    page.has_content?("Portfolio investment was successfully", wait: 1)
   end
 
   Then('a portfolio investment should be created') do
@@ -161,9 +163,11 @@ Given('The old valuations are deleted') do
     visit(valuation_path(val))
     click_on("Delete")
     click_on("Proceed")
-    sleep 0.5
+    # Was sleep 0.5 per valuation plus sleep 1 after the loop: wait for the destroy redirect's
+    # flash instead - capped at that same 1.5 s per delete and not asserted (a refused delete
+    # shows "could not be destroyed", also matched), so it is never stricter
+    page.has_content?(/Valuation (was successfully destroyed|could not be destroyed)/, wait: 1.5)
   end
-  sleep 1
 end
 
 Then('There should be {string} portfolio investments created') do |count|
@@ -275,8 +279,9 @@ Given('I create a new stock adjustment {string}') do |args|
 
   @stock_adjustment = StockAdjustment.new(portfolio_company: @investor, entity_id: @investor.entity_id, user_id: User.first.id, investment_instrument: @investment_instrument)
   key_values(@stock_adjustment, args)
+  # No sleep(2): apply_stock_adjustment's StockAdjustmentJob.perform_later runs inline in test,
+  # so save! returns with the valuations already adjusted
   @stock_adjustment.save!
-  sleep(2)
 end
 
 Then('the valuations must be adjusted') do
@@ -344,7 +349,10 @@ Given('The user generates all fund reports for the fund') do
     fill_in('fund_report_start_date', with: "2020-01-01", wait: 100)
     fill_in('fund_report_end_date', with: "2024-01-01", wait: 100)
     click_button("Save")
-    sleep(2)
+    # Was sleep(2): the create redirect's flash (or the inline job's completion flash) means this
+    # report's request is done before the loop visits the fund again. Capped at that same 2 s and
+    # not asserted, so it is never stricter
+    page.has_content?(/Fund report will be generated|generation completed/i, wait: 2)
   end
 end
 
@@ -504,7 +512,7 @@ Given('I generate a portfolio as of report for {string}') do |string|
   visit("/investors/portfolio_investments_report_all?fund_id=#{@fund.id}")
   fill_in('as_of', with: Time.zone.parse(string))
   click_on("Generate")
-  sleep(1)
+  # No sleep(1): the expectation below waits up to 20 s for the flash
   # With :inline job adapter the job runs synchronously and the completion flash
   # ("Portfolio Investment Report created") replaces the async "started" flash
   # before this assertion could catch it. Accept either message.
@@ -680,7 +688,9 @@ Given('I fill in the new investment form with different Portfolio Company') do
   @api = AggregatePortfolioInvestment.where(portfolio_company_id: @portfolio_company.id).first
   @investment_instrument = @portfolio_company.investment_instruments.first
   select(@portfolio_company.name, from: "portfolio_investment_portfolio_company_id")
-  sleep(1)
+  # Was sleep(1). Picking the company swaps the instrument select over XHR; wait for the new one
+  # (same as the "New Investment" step above), or `select` grabs the old select's detached node
+  expect(page).to have_select("portfolio_investment_investment_instrument_id", with_options: [@investment_instrument.name])
   select(@investment_instrument.name, from: "portfolio_investment_investment_instrument_id")
   @date = Date.today - rand(100).days
   fill_in("portfolio_investment_investment_date", with: @date)

@@ -39,13 +39,18 @@ end
 
 
 Then('an AI portfolio report should be created for {string}') do |company_name|
-  # Good - waits UP TO 10 seconds, returns as soon as content appears
-  sleep 3 # Wait for record creation and redirect
-
-  @report = AiPortfolioReport.last
-  expect(@report).to be_present
-  expect(@report.portfolio_company.name).to eq(company_name)
-  expect(@report.folder).to eq(@folder)
+  # Was sleep 3 for record creation: retry the checks until the report has been created
+  eventually do
+    @report = AiPortfolioReport.last
+    expect(@report).to be_present
+    expect(@report.portfolio_company.name).to eq(company_name)
+    expect(@report.folder).to eq(@folder)
+  end
+  # The record is saved before the request finishes: GenerateSectionContentJob then runs inline
+  # and only afterwards does create_from_folder redirect to the report. Wait for that redirect so
+  # the scenario's teardown cannot clean the DB under the still-running request (which failed the
+  # scenario in an After hook under parallel load). Not asserted - the checks above are the test.
+  page.has_current_path?(ai_portfolio_report_path(@report), wait: 30)
 end
 
 When('I click in chart modal to generate chart the button {string}') do |button_text|

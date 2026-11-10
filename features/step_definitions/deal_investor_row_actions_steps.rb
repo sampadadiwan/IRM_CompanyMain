@@ -108,6 +108,15 @@ When('I expand the deal investor details card') do
   end
 end
 
+# Waits until the block is true, polling every 0.1 s, for at most `cap` seconds; never raises.
+# Replaces a fixed sleep(cap) after a sidepanel save: returns as soon as the save has committed,
+# and if it never does the step is no stricter than the sleep was - the next step's assertion
+# still decides.
+def poll_until_committed(cap)
+  deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + cap
+  sleep 0.1 until yield || Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
+end
+
 Then('the investor sidepanel should show the deal investor edit form') do
   within(SIDEPANEL) do
     expect(page).to have_selector(".edit_deal_investor", wait: 20)
@@ -121,7 +130,8 @@ When('I set the deal investor tier to {string} in the sidepanel and save') do |t
     fill_in("deal_investor_tier", with: tier)
     find("#saveButton").click
   end
-  sleep(2)
+  # Was sleep(2): wait (same 2 s cap) for the new tier to be saved
+  poll_until_committed(2) { @deal_investor.reload.tier == tier }
 end
 
 Then('the deal investor tier should be {string}') do |tier|
@@ -187,11 +197,13 @@ Then('the task form should open in the sidepanel') do
 end
 
 When('I fill in the task details with {string} and save') do |details|
+  tasks_before = Task.count
   within(SIDEPANEL) do
     find("#new_task trix-editor[input='task_details_trix_input_task']", wait: 20).set(details)
     within("#new_task") { click_on("Save") }
   end
-  sleep(2)
+  # Was sleep(2): wait (same 2 s cap) for the task to be created
+  poll_until_committed(2) { Task.count > tasks_before }
 end
 
 # The task form has no frame-clear "Cancel" like the note form does — its dismiss
@@ -237,6 +249,7 @@ When('I complete the task for {string} from the sidepanel') do |name|
   # Poll rather than sleep: the checkbox submits over turbo and the assertion that
   # follows reloads the page, which would otherwise race the write.
   Timeout.timeout(20) do
+    # KEEP: poll interval of a bounded wait, not a fixed delay
     sleep(0.5) until Task.where(owner: deal_investor).exists?(completed: true)
   end
 end
@@ -282,12 +295,14 @@ def open_row_actions_menu_for(deal_investor)
 end
 
 def fill_in_and_save_note(details, on: nil)
+  notes_before = Note.count
   within(SIDEPANEL) do
     find("#new_note #note_details", wait: 20).set(details)
     fill_in("note_on", with: on.strftime("%Y-%m-%d")) if on
     within("#new_note") { click_on("Save") }
   end
-  sleep(2)
+  # Was sleep(2): wait (same 2 s cap) for the note to be created
+  poll_until_committed(2) { Note.count > notes_before }
 end
 
 def named_deal_investor(name)

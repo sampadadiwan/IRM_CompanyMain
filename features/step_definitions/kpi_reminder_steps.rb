@@ -59,9 +59,18 @@ Then('I should see the kpi report details') do
 end
 
 When('I press {string}') do |button_text|
+  before_url = current_url
   click_on button_text
   click_on "Proceed" if button_text == "Send Notification"
-  sleep(2)
+  # Was sleep(2). The steps after this read the DB or a field straight away, so it must still wait
+  # for the press to take effect: the submitting buttons (Send Reminder, Approve All) redirect, so
+  # return as soon as the URL changes; client-side ones (Remove field, Stay on this page) never
+  # navigate and get the old 2 s. Capped and non-raising - never slower or stricter than the sleep
+  deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 2
+  while current_url == before_url && Process.clock_gettime(Process::CLOCK_MONOTONIC) < deadline
+    # Poll interval, not a wait for anything in particular
+    sleep 0.05
+  end
 end
 
 Given('I am on the kpis page for the portfolio company {string}') do |portco_name|

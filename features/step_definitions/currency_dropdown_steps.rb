@@ -55,7 +55,10 @@ end
 When('I visit the portfolio company dashboard') do
   # Visit the portfolio company dashboard page where all three widgets are shown
   visit "/investors/#{@portfolio_company.id}/dashboard"
-  sleep(2) # Give time for the page to load and turbo frames to render
+  # Was sleep(2) for the turbo frames: wait until no frame with a src is still loading (Turbo sets
+  # [complete] once loaded), so the "should not see" steps that follow are not checked too early.
+  # Capped at that same 2 s and not asserted, so a lazy frame that never loads is no stricter.
+  page.has_no_css?("turbo-frame[src]:not([complete])", wait: 2)
 end
 
 Then('I should see a currency dropdown for fund ratios') do
@@ -211,9 +214,7 @@ Given('the Portfolio Company Report widget has metadata with show_currency_filte
 end
 
 Then('I should see a currency dropdown for valuations') do
-  # Wait for the portfolio company report widget to load (it uses turbo frames)
-  sleep(3)
-
+  # No sleep(3): have_css below waits for the widget's turbo frame to render the dropdown
   # The valuation time series currency dropdown
   expect(page).to have_css('select#valuation_currency_select', visible: true)
 end

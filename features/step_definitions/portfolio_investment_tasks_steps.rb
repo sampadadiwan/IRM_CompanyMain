@@ -64,8 +64,8 @@ end
 
 When('I save the task with details {string}') do |details|
   find("trix-editor[input='task_details_trix_input_task']").set(details)
-  click_on('Save')
-  sleep(2)
+  # Was sleep(2) before the next step's DB lookup: wait for the save's response (page_load_helpers.rb)
+  wait_for_page_after(timeout: 2) { click_on('Save') }
 end
 
 Then('the task {string} should be owned by the portfolio investment') do |details|

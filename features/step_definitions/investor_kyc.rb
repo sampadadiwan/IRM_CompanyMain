@@ -7,7 +7,7 @@
     visit(investor_kycs_path)
     click_on("New KYC")
     click_on("Individual")
-    sleep(2)
+    # No sleep(2): the next step's fill_in/select wait for the KYC form to render
   end
 
 Then('the investor kycs must have the data in the sheet') do

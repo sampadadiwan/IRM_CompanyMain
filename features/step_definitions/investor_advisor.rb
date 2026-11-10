@@ -58,6 +58,7 @@
     # to land (it sets investor_advisor_id) before doing our own explicit select,
     # then retry once if we still lose the race.
     deadline = Time.now + Capybara.default_max_wait_time
+    # Poll interval of a bounded wait loop, not a fixed wait - stays
     sleep(0.1) while @user.reload.investor_advisor_id.nil? && Time.now < deadline
 
     attempts = 0
@@ -170,8 +171,10 @@ Given('I delete the InvestorAccess of this User on the investors page') do
   end
 
   click_on("Proceed")
-  sleep 0.5
-  expect(@investor_advisor.user.investor_accesses.reload.count).to eq(@user_investor_accesses.count - 1)
+  # Was sleep 0.5 then a one-shot check: retry the check until the delete has landed instead
+  eventually do
+    expect(@investor_advisor.user.investor_accesses.reload.count).to eq(@user_investor_accesses.count - 1)
+  end
 end
 
 

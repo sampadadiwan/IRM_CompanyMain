@@ -7,10 +7,10 @@ end
 Given('there is a template {string} in folder {string}') do |template_name, folder_name|
   @template_name = template_name
   @folder ||= Folder.find_by(name: folder_name, owner: @kyc)
+  # No sleeps here: visit waits for the page and its Stimulus controllers, and each click_on waits
+  # for its (dropdown) item to be visible
   visit(folder_path(@folder))
-  sleep(2)
   click_on("Actions")
-  sleep(0.5)
   click_on("New Document")
   #sleep(2)
   fill_in('document_name', with: template_name)
@@ -34,8 +34,9 @@ Given('I fill in the kyc doc gen details') do
   @end_date = Time.zone.parse("31/12/2025")
   fill_in("#{type}_kyc_start_date", with: @start_date)
   fill_in("#{type}_kyc_end_date", with: @end_date)
+  # No sleep(2): picking the template triggers nothing asynchronous, and the next step's click_on
+  # ("Generate Now") waits for its button
   select(@template_name, from: "#{type}_kyc_template_name")
-  sleep(2)
 end
 
 Then('the document should be successfully generated for the KYC') do

@@ -134,12 +134,14 @@ Then("the report's own filters are {string}") do |expected|
     actual = @report.reload.template["root_filters"]
     break if actual == JSON.parse(expected)
 
+    # KEEP: poll interval of a bounded wait, not a fixed delay
     sleep 0.5
   end
   expect(actual).to eq(JSON.parse(expected))
 end
 
 Then("the report's own filters stay empty") do
+  # KEEP: asserts the filter did NOT save, so real time must pass the 600 ms debounce first
   sleep 1.5 # longer than the 600 ms pause before a filter saves
   expect(@report.reload.template["root_filters"].presence || {}).to eq({})
 end

@@ -29,7 +29,7 @@ When('I create a form type and custom grid view for {string}') do |form_type|
   click_link('New Form Type')
   find('select[name="form_type[name]"]').select(form_type)
   click_on('Save')
-  sleep(0.5)
+  # No sleep(0.5): click_on waits for the saved form type page's Configure Grids button
   click_on('Configure Grids')
   @form_type = FormType.where(name: form_type).last
   #sleep(1)
@@ -39,7 +39,7 @@ When('I create a derived field {string}') do |form_type|
   click_link('New Form Type')
   find('select[name="form_type[name]"]').select(form_type)
   click_on('Save')
-  sleep(0.5)
+  # No sleep(0.5): click_on waits for the saved form type page's Configure Grids button
   click_on('Configure Grids')
 
   # Configure Grids shows the shared columns editor (grid-columns-inline-settings D19, D20): the derived field

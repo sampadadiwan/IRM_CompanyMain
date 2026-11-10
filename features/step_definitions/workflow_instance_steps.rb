@@ -592,6 +592,7 @@ Then("the {word} {string} should have workflow status {string}") do |type, obj_n
   loop do
     status = workflowable.workflow_instances.order(created_at: :desc).first!.status
     break if status == expected_status || Time.current > deadline
+    # KEEP: poll interval of a bounded wait, not a fixed delay
     sleep 0.2
   end
   status.should == expected_status

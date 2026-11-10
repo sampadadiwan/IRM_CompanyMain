@@ -19,12 +19,15 @@ When('I create a new board {string}') do |arg1|
 	#sleep(1)
 	fill_in("kanban_board_name", with: "Board")
 	click_on("Save")
-	sleep(1)
+	# Was sleep(1). "Board" alone is already on the page ("New Board"), so wait for the saved board
+	# itself; a board that never saves failed on KanbanBoard.first being nil before, too
+	eventually { expect(KanbanBoard.first).to be_present }
 	expect(page).to have_content("Board")
 	kanban_board = KanbanBoard.first
 	kanban_columns = kanban_board.kanban_columns.pluck(:name)
   #sleep(1)
-  kanban_columns.each {|column| expect(page.text).to(include(column)) }
+  # have_content waits for the board's columns to render (page.text was a one-off read after the sleep)
+  kanban_columns.each { |column| expect(page).to have_content(column) }
 end
 
 When('I add an item to the board') do
@@ -34,20 +37,26 @@ When('I add an item to the board') do
 	fill_in "kanban_card[notes]", with: "Test Note"
 	fill_in "kanban_card[info_field]", with: "Test Card"
 	click_button('Save')
-	sleep(0.5)
+	# Was sleep(0.5): wait for the saved card to render on the board (input values are not page
+	# text, so this cannot match the form itself). Capped at that same 0.5 s and not asserted.
+	page.has_content?("Test Card", wait: 0.5)
 	all('.connect-sorting').first.find('#dropdownMenuLink-1').click()
-	sleep(0.1)
+	# click_on waits for the menu item (was sleep 0.1)
 	click_on('Archive All')
-	sleep(1)
-	expect(KanbanBoard.last.kanban_cards.only_deleted.count).to(eq(1))
-	expect(KanbanBoard.last.kanban_columns.only_deleted.count).to(eq(1))
+	# Was sleep(1): retry the DB checks until the archive request has committed
+	eventually do
+		expect(KanbanBoard.last.kanban_cards.only_deleted.count).to(eq(1))
+		expect(KanbanBoard.last.kanban_columns.only_deleted.count).to(eq(1))
+	end
 	all('#dropdownMenuLink-1').first.click()
 	click_on('Archived Columns')
-	sleep(0.25)
+	# click_button waits for the Restore button (was sleep 0.25)
 	click_button('Restore')
-	sleep(0.5)
-	expect(KanbanBoard.last.kanban_cards.only_deleted.count).to(eq(0))
-	expect(KanbanBoard.last.kanban_columns.only_deleted.count).to(eq(0))
+	# Was sleep(0.5): retry the DB checks until the restore request has committed
+	eventually do
+		expect(KanbanBoard.last.kanban_cards.only_deleted.count).to(eq(0))
+		expect(KanbanBoard.last.kanban_columns.only_deleted.count).to(eq(0))
+	end
 end
 
 When('I move card to the top position') do
@@ -65,6 +74,8 @@ When('I move card to the top position') do
   kanban_card = KanbanCard.last
   expect(kanban_card.sequence).to(eq(2))
   all(".move-to-up-column").last.click
+  # KEEP: the check below asserts the sequence did NOT change, so it needs the move request to have
+  # run; there is no page signal for "the move was refused" to wait on instead
   sleep(2)
 	# TODO: improve spec
 	expect(kanban_card.reload.sequence).to(eq(2))

@@ -21,6 +21,7 @@ def fs_eventually(timeout: 8)
   rescue RSpec::Expectations::ExpectationNotMetError, ActiveRecord::RecordNotFound
     raise if Time.current > deadline
 
+    # Poll interval of a bounded retry loop, not a fixed wait - stays
     sleep 0.2
     retry
   end

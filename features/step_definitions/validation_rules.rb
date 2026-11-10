@@ -579,7 +579,8 @@ When('I click {string} in the modal') do |button_text|
   within("#ruleValidationModal") do
     click_on button_text
   end
-  sleep 1  # allow Turbo/form submission to complete
+  # No sleep: the only step that follows ("the valuation is saved successfully") waits for the
+  # submission's flash itself
 end
 
 Then('the valuation is saved successfully') do

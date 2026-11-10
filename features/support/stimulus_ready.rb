@@ -53,6 +53,7 @@ module StimulusReady
         return
       end
 
+      # Poll interval of the bounded wait above, not a fixed wait - stays
       sleep 0.05
     end
   end
@@ -77,6 +78,7 @@ module StimulusReady
     until (element.evaluate(MODAL_SETTLED_JS) rescue true)
       return if Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
 
+      # Poll interval of the bounded wait above - stays
       sleep 0.05
     end
   end

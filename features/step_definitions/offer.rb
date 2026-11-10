@@ -154,10 +154,8 @@ Then('When I approve the offers the offers should be approved') do
 Offer.all.each do |offer|
     visit offer_path(offer)
     click_on("Approve")
-    sleep(1)
-
-    offer.reload
-    offer.approved.should == true
+    # Was sleep(1): retry the DB check until the approval has saved
+    eventually { expect(offer.reload.approved).to eq(true) }
 
     within("li#approved") do
       expect(page).to have_content("Yes")

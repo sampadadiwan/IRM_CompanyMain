@@ -22,7 +22,9 @@ end
 
 When('I click {string} and accept the alert') do |text|
   click_on text
-  sleep(2)
+  # Was sleep(2): kpi_chart_controller.js shows its alert modal once the save request has answered
+  # (success or error), so wait for that modal - capped and non-failing like the sleep
+  page.has_css?("#kpiChartAlertModal.show", wait: 10)
 end
 
 Then('I should see {string} in an alert') do |message|

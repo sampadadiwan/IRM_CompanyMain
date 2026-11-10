@@ -85,14 +85,16 @@ When('I approve the KPI {string}') do |kpi_name|
   kpi = Kpi.unapproved.find_by(name: kpi_name)
   # Confirms in #confirmModal only if the button asks (features/support/confirm_modal_helpers.rb)
   click_and_confirm_if_asked(find(".value_#{kpi.id}").find(:link_or_button, "Approve"))
-  sleep 1
+  # Was sleep 1: wait for the staged row to leave the unapproved set (capped at 1 s, never fails)
+  wait_up_to(1) { !Kpi.unapproved.exists?(kpi.id) }
 end
 
 When('I reject the KPI {string}') do |kpi_name|
   kpi = Kpi.unapproved.find_by(name: kpi_name)
   # Confirms in #confirmModal only if the button asks (features/support/confirm_modal_helpers.rb)
   click_and_confirm_if_asked(find(".value_#{kpi.id}").find(:link_or_button, "Reject"))
-  sleep 1
+  # Was sleep 1: a rejected staged row is removed - wait for that (capped at 1 s, never fails)
+  wait_up_to(1) { !Kpi.unapproved.exists?(kpi.id) }
 end
 
 When('I approve all staged KPIs') do
@@ -102,7 +104,9 @@ When('I approve all staged KPIs') do
   # runs KpiCumulateJob over every approved KPI — ~600 in the large-workbook scenario — which can
   # outlast 16.5 s. Give this one click the 60 s navigation budget instead.
   click_and_confirm_if_asked(find(:link_or_button, "Approve All Staged"), proceed_wait: 60)
-  sleep 1
+  # Was sleep 1: the Proceed click already waits for approve_all's navigation; this only covers a
+  # straggler (capped at 1 s, never fails)
+  wait_up_to(1) { !Kpi.unapproved.exists? }
 end
 
 Then('I should see the KPI {string} with value {string} as approved') do |name, value|
@@ -150,8 +154,13 @@ end
 # Shared by every button_to on this codebase's show pages that wires up data-controller="confirm"
 # (Approve/Reject/Unapprove on the KPI show page, Recompute RAG Status on the mapping show page).
 When('I click {string} and confirm') do |button_label|
-  click_and_confirm_if_asked(find(:link_or_button, button_label))
-  sleep 1
+  # Find the button before tagging the page: finding it waits for the page to finish loading
+  button = find(:link_or_button, button_label)
+  mark_page_before_submit
+  click_and_confirm_if_asked(button)
+  # Was sleep 1: these button_to actions redirect back, which replaces the page - wait for that
+  # (capped at the old 1 s and never fails, so a turbo_stream answer just takes the old second)
+  wait_up_to(1) { page_replaced? }
 end
 
 # "I should [not] see an {string} button" already defined in kyc_doc_extractor_agent_steps.rb —

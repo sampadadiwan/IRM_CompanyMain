@@ -373,6 +373,7 @@ end
 Then('the {string} section should be open') do |section|
   expect(page).to have_css("#collapse#{section}.show", wait: 10)
   # Still open once the tabs controller has run (it used to toggle an already-open section shut)
+  # Kept: this checks the section STAYS open, so real time has to pass - no event marks "will not close"
   sleep(1)
   expect(page).to have_css("#collapse#{section}.show")
 end

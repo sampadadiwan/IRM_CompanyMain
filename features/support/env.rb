@@ -270,6 +270,7 @@ module IRMUtils
       yield
     rescue RSpec::Expectations::ExpectationNotMetError, ActiveRecord::RecordNotFound, Capybara::ElementNotFound => e
       raise e if Time.now - start_time >= timeout
+      # Poll interval of eventually's bounded retry, not a fixed wait - stays
       sleep 0.5
       retry
     end

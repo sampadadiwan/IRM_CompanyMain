@@ -176,9 +176,42 @@ When('I click {string} within {string}') do |button_text, container|
   within(container) do
     click_on button_text
   end
-  sleep(1)
+  # No sleep(1): every step that follows this one (fill_in, "I should see", a click within a
+  # modal) waits for its own element
 end
 
+# ── Waiting on an action instead of a fixed sleep ─────────────────────────────────────────────
+
+# Polls the block until it is truthy or `max_seconds` pass, then returns its last result - it
+# never raises. For replacing a fixed sleep(N) whose step could not fail on its own: returns as
+# soon as the action has landed, and on any other outcome waits no longer than the old sleep did.
+# The block must not call waiting Capybara matchers (has_*? without wait: false) or it waits again.
+def wait_up_to(max_seconds, interval: 0.1)
+  deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + max_seconds
+  loop do
+    result = yield
+    return result if result || Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
+
+    sleep interval
+  end
+end
+
+# Tags the current page's <body> so page_replaced? can tell when a redirect has landed: Turbo Drive
+# swaps in a new <body>, so the tag disappears exactly when the response has rendered. Needed where
+# the page already shows the text the response would bring (e.g. a second bulk action's flash).
+def mark_page_before_submit
+  # Wait for the page to have a <body> first: straight after a visit the browser can still be on
+  # the blank document, where the tag would have nowhere to go
+  expect(page).to have_css("body")
+  page.execute_script("document.body.dataset.awaitingResponse = '1'")
+end
+
+def page_replaced?
+  page.evaluate_script("document.body.dataset.awaitingResponse !== '1'")
+rescue StandardError
+  # Mid-navigation the old document's context can vanish under the call - not replaced yet
+  false
+end
 
 Then(/^the user receives an email with "([^"]*)" as the subject$/) do |subject|
   open_email(@user.email)
@@ -207,7 +240,7 @@ end
 Then(/^I should see the all the home page menus "([^"]*)"$/) do |arg1|
   arg1.split(";").each do |menu|
     click_on(menu)
-    sleep(0.5)
+    # No sleep(0.5): find waits for the menu page's back button
     page.find(".back-button").click
   end
 end
@@ -221,9 +254,9 @@ end
 
 When(/^I click "([^"]*)" in the side panel$/) do |arg1|
   page.find(".bar-button-menutoggle").click
-  sleep(1)
+  # No sleeps: click_on waits for the panel's link to be visible and stable, and every caller's
+  # next step waits for what it checks
   click_on(arg1)
-  sleep(1)
 end
 
 When('I click the tab {string}') do |args|
@@ -256,9 +289,13 @@ end
 Given('I trigger the bulk action for {string}') do |bulk_action|
   click_on("Bulk Actions")
   click_on(bulk_action)
-  sleep(2)
+  # No sleep(2): click_on waits for the confirm popup's Proceed button
+  mark_page_before_submit
   click_on("Proceed")
-  sleep(5)
+  # Was sleep(5). WithBulkActions#bulk_actions runs the job (inline in tests) and redirects back with
+  # "Bulk Action started..."; wait for that redirect to replace the page - the flash alone can be
+  # left over from an earlier bulk action. Capped at the old 5 s and never fails, like the sleep.
+  wait_up_to(5) { page_replaced? && page.has_content?("Bulk Action started", wait: false) }
 end
 
 

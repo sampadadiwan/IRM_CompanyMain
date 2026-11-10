@@ -196,7 +196,7 @@ Then('the activity must be completed') do
     break if @deal_activity.status == "Complete"
     raise "Activity status did not update to 'Complete' in database within #{max_wait}s. Current: #{@deal_activity.status}" if Time.now - start_time > max_wait
 
-    sleep 0.5
+    sleep 0.5 # poll interval of this wait loop - kept
   end
 end
 
@@ -287,7 +287,7 @@ Then('the deal list grid should apply the first-row and pagination fixes') do
     break if grid_state['scrollTop'] == 0
     raise "Timed out waiting for AG Grid first-row visibility fix: #{grid_state.inspect}" if Time.now >= deadline
 
-    sleep(0.1)
+    sleep(0.1) # poll interval of this wait loop - kept
   end
 
   expect(grid_state['hasManagedClass']).to eq(true)

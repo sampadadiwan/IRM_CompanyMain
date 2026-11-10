@@ -281,6 +281,7 @@ Then('Digio\'s script should have been requested from {string}') do |url|
   expect(page).to have_css("#start_signing")
   # The page injects the script on connect, so the request is made just after the page is ready
   deadline = Time.zone.now + 10
+  # KEEP: poll interval of a bounded wait, not a fixed delay
   sleep 0.1 until @digio_script_requests.include?(url) || Time.zone.now > deadline
   expect(@digio_script_requests).to include(url)
 end
@@ -606,6 +607,7 @@ end
 
 def esign_wait_for_status_check(wait: 10)
   deadline = Time.zone.now + wait
+  # KEEP: poll interval of a bounded wait, not a fixed delay
   sleep 0.1 while @status_checks.empty? && Time.zone.now < deadline
 end
 

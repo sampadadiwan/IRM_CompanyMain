@@ -552,12 +552,13 @@ end
 Given('we trigger a notification {string} for the sale') do |notification|
   puts "\nTriggering notification #{notification}"
   visit secondary_sale_path(@sale)
-  sleep 1
+  # No sleeps before the clicks: click_button / click_on wait for the menu and the popup's Proceed
   click_button "Notifications"
   click_on notification
-  sleep 1
   click_on "Proceed"
-  sleep 1
+  # Was sleep(1): send_notification sends inline, then redirects with this flash. The page was
+  # freshly visited above, so the flash cannot be a leftover. Never fails, like the sleep.
+  page.has_content?("Notification sent successfully.", wait: 5)
 end
 
 Then('each seller must receive email with subject {string}') do |eval_subject|
@@ -613,8 +614,8 @@ Given('when I click the esign link') do
 end
 
 Then('I should be sent to the digio esign page') do
-  sleep 10
-  expect(page).to have_content("Security code sent to #{@user.phone}")
+  # Was sleep(10) then the default 15 s wait: one 25 s wait covers the same window, returning early
+  expect(page).to have_content("Security code sent to #{@user.phone}", wait: 25)
 end
 
 
@@ -748,16 +749,18 @@ Then('when the allocations are verified {string}') do |verified|
   visit(secondary_sale_path(@sale))
   click_on("View Allocations")
   click_on("All Allocations")
-  sleep(1)
+  # No sleeps before the clicks: each click_on waits for its button (menu item, popup's Proceed)
   click_on("Bulk Actions")
   if verified == "true"
     click_on("Verify")
   else
     click_on("Unverify")
   end
-  sleep(1)
+  mark_page_before_submit
   click_on("Proceed")
-  sleep(12)
+  # Was sleep(12). WithBulkActions#bulk_actions runs the job (inline in tests) and redirects back with
+  # "Bulk Action started..." - wait for that redirect (capped at the old 12 s, never fails)
+  wait_up_to(12) { page_replaced? && page.has_content?("Bulk Action started", wait: false) }
   @sale.reload
 end
 

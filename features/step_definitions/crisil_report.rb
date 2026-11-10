@@ -18,11 +18,14 @@ Then('the Crisil report should be generated') do
     /Fund report will be generated|generation completed/i,
     wait: 20
   )
-  sleep(5)
   # expect(page).to have_content("CRISIL Report generation completed.")
-  crisil_report = Document.where("name like ?", "%CRISIL Report%").last
-  expect(crisil_report).to be_present
-  expect(crisil_report.file).to be_present
+  # Was sleep(5) before reading the document: retry until the generation job has stored it
+  crisil_report = nil
+  eventually(timeout: 20) do
+    crisil_report = Document.where("name like ?", "%CRISIL Report%").last
+    expect(crisil_report).to be_present
+    expect(crisil_report.file).to be_present
+  end
   expect(crisil_report.name.include?(@start_date.strftime('%d %B,%Y'))).to be_truthy
   expect(crisil_report.name.include?(@end_date.strftime('%d %B,%Y'))).to be_truthy
 end

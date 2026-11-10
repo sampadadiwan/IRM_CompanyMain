@@ -120,7 +120,7 @@
         document.body.appendChild(f); f.submit();
       })();
     JS
-    sleep(1)
+    # No sleep(1): the expect waits for the update's flash (not on the page before the submit)
     expect(page).to have_text("User was successfully updated.")
   end
 

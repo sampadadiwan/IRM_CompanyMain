@@ -60,8 +60,9 @@ end
 
 When('I pause so the error card can be seen') do
   # Purely for humans watching the browser during the run — gives time to see
-  # the rendered error card before the retry click replaces it
-  sleep(5)
+  # the rendered error card before the retry click replaces it. Headless runs (no BROWSER, see
+  # features/support/env.rb) have nobody watching, so they skip the 5 s.
+  sleep(5) if ENV["BROWSER"].present?
 end
 
 When('I click retry on the section load error card') do

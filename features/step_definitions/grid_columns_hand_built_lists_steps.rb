@@ -95,7 +95,9 @@ Given("my browser is {int} pixels wide") do |width|
 end
 
 def gcl_visible_headings(table_id)
-  sleep 1.5 # DataTables measures and folds after the first draw
+  # Kept: DataTables Responsive measures and folds after the first draw / a debounced resize, with
+  # no DOM signal for "done" - without the settle, "shows its actions column" passes before a fold
+  sleep 1.5
   all("table##{table_id} thead th").select(&:visible?).map { |th| th.text.gsub(/[▲▼]/, "").squish }
 end
 
