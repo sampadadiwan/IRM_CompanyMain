@@ -367,3 +367,4 @@ Roles are assigned automatically only for Company, Investment Fund, Angel Fund, 
 - [Investor KYC](investor_kyc_user_guide) — what the KYC extended permissions control.
 - [Two-Factor Authentication](two_factor_authentication_user_guide) — enabling and resetting 2FA for a user.
 - [Approvals](approvals_user_guide) — what the approver role unlocks.
+- [Security Events](security_events_user_guide) — the log of every role granted or removed, and the admin alerts for admin and approver changes.

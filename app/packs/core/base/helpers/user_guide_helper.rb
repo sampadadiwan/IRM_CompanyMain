@@ -121,6 +121,8 @@ module UserGuideHelper
 
     # Audit Trail
     'audits' => 'audit_trail_user_guide.md',
+    # Security event trail (Company menu → Security Events)
+    'security_events' => 'security_events_user_guide.md',
 
     # Settings & Utilities
     'exchange_rates' => 'tracking_currency_guide.md',

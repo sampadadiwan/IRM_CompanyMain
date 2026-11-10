@@ -205,3 +205,4 @@ Changes to tracked record types are recorded field by field, including custom fi
 - [Workflow Templates](workflow_templates_user_guide) — a workflow's own audit trail and CSV export.
 - [Stakeholders (Investors)](investors_user_guide) — the records whose history you most often need to trace.
 - [Custom Fields](custom_fields_user_guide) — how custom field changes appear in an event's details.
+- [Security Events](security_events_user_guide) — sign-ins, refused sign-ins, role and support-access changes and downloads, which the Audit Trail doesn't show.

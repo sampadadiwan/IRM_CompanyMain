@@ -386,3 +386,4 @@ No. Once reset, the old method cannot be restored; you set up a method again at 
 - [User Role Management](user_role_management_user_guide) — the company admin role that can reset another user's 2FA method.
 - [Entities](entities_user_guide) — your organisation's profile and settings.
 - [Audit Trail](audit_trail_user_guide) — where changes to user settings, including 2FA, are recorded.
+- [Security Events](security_events_user_guide) — wrong codes, 2FA switched on or off, and method resets, with the IP and time.
