@@ -1,5 +1,5 @@
 class AllocationRunsController < ApplicationController
-  before_action :set_allocation_run, only: %i[lock unlock]
+  before_action :set_allocation_run, only: %i[lock unlock mark_crashed]
 
   def lock
     if @allocation_run.update(locked: true)
@@ -29,6 +29,17 @@ class AllocationRunsController < ApplicationController
       flash[:notice] += " #{demoted} locked financial statement set#{'s' if demoted != 1} went back to Draft." if demoted.positive?
     else
       flash[:alert] = "Failed to unlock AllocationRun."
+    end
+    redirect_back_or_to(allocate_form_fund_path(@allocation_run.fund))
+  end
+
+  # A run whose process died stays "unfinished" and blocks its fund; this frees the fund straight away.
+  # Refused while an engine is still running on the fund, or once the run has finished.
+  def mark_crashed
+    if @allocation_run.mark_crashed!(current_user)
+      flash[:notice] = "Allocation run #{@allocation_run.id} marked as crashed. You can now start a new run on this fund; re-run its period to replace any entries it left behind."
+    else
+      flash[:alert] = "Allocation run #{@allocation_run.id} was not marked as crashed: it has finished, or it is still running."
     end
     redirect_back_or_to(allocate_form_fund_path(@allocation_run.fund))
   end

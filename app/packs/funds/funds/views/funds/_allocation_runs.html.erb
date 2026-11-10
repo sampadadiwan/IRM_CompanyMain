@@ -86,8 +86,13 @@
         can_save_template = policy(AllocationRunTemplate.new(entity_id: fund.entity_id, fund: fund)).create?
         # The checker's rights do not vary by run, so the policy is evaluated once for the fund.
         can_check_run = policy(AllocationRunReport.new(entity_id: fund.entity_id, fund: fund)).create?
+        # Marking a run crashed is allowed to the same people for every run of the fund
+        can_mark_crashed = policy(AllocationRun.new(fund: fund)).mark_crashed?
       %>
       <% all_runs.each do |runs|  %>
+        <%# Unfinished but no engine is running on the fund (its process died, or the job is queued).
+            Asks MySQL only for unfinished runs, so normally not at all. %>
+        <% run_crashed = runs.crashed? %>
         <tr id="allocation_run_<%= runs.id %>">
           <td>
             <%= l runs.start_date, format: :abbr_month_day_year %>
@@ -119,6 +124,12 @@
           </td>
           <td>
             <%= runs.status %>
+            <%# Why an unfinished run matters: it blocks the fund (AllocationRun.unfinished) %>
+            <% if run_crashed %>
+              <div class="text-danger mt-1">Not running on any server, so it will not finish. Mark it as crashed to run this fund again.</div>
+            <% elsif runs.unfinished? %>
+              <div class="text-muted mt-1">Running. No other run can start on this fund until it finishes.</div>
+            <% end %>
             <%# Allocation run checker result, under the run's own status. Deliberately not its
                 own column: this table's DataTable is responsive and drops columns from the
                 right when they do not fit, so a 13th column hides the actions cell. %>
@@ -192,6 +203,20 @@
                                          bs_title: "Lock — prevent this run's period from being edited or run again until it's unlocked" },
                                  "aria-label": "Lock" do %>
                     <i class="ti ti-lock"></i>
+                  <% end %>
+                <% end %>
+              <% end %>
+              <%# Only for a run that stopped without finishing: frees the fund at once instead of waiting
+                  AllocationRun::STALE_AFTER. Never offered while an engine is running on the fund. %>
+              <% if run_crashed && can_mark_crashed %>
+                <%= form_with model: false, url: mark_crashed_allocation_run_path(runs), method: :patch, class: "d-inline" do %>
+                  <%= button_tag class: "btn btn-sm btn-outline-danger",
+                                 data: { action: "click->confirm#popup", method: :patch, turbo: false,
+                                         title: "Mark allocation run #{runs.id} as crashed?",
+                                         msg: allocation_run_crash_action_summary(runs),
+                                         bs_title: "Mark as crashed — this run stopped without finishing; free the fund to run again" },
+                                 "aria-label": "Mark as crashed" do %>
+                    <i class="ti ti-player-stop"></i>
                   <% end %>
                 <% end %>
               <% end %>

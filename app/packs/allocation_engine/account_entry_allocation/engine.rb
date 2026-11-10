@@ -39,10 +39,41 @@ module AccountEntryAllocation
       @allocation_run = AllocationRun.find(allocation_run_id) if allocation_run_id.present?
     end
 
-    # Here we demonstrate a single "call" method that triggers the main operation,
-    # which then calls sub-operations for each piece of logic.
-    # You can adapt as needed.
+    # What call returns when the run was refused before any formula ran. Quacks like the Trailblazer
+    # result for the two things callers read (AllocationGroupRunJob): failure? and [:error].
+    Refused = Struct.new(:error) do
+      def failure? = true
+      def success? = false
+      def [](key) = key == :error ? error : nil
+    end
+
+    # Every way into the engine (the allocate screen's job, run groups, statement generation,
+    # rerun!, the console) comes through here, so this is where "one run per fund at a time" is
+    # enforced for real: the AllocationRun validation stops a second run being created, and the
+    # fund lock stops two engines that slipped past it (a double-click) from running together.
     def call
+      AllocationFundLock.hold(fund.id) do |taken|
+        # Another engine is running on this fund right now (on any thread, process or box)
+        next refuse("Not started: another allocation run is already running on this fund. Wait for it to finish, then run this period again.") unless taken
+        # Checked after taking the lock, so a user marking the run crashed and the job starting
+        # cannot both slip through: the run was marked while its job sat in the queue
+        next refuse(nil) if allocation_run&.reload&.crashed_by_user?
+
+        run_operation
+      end
+    end
+
+    private
+
+    # Records why the run did not start (unless the status already says so) and tells the user
+    def refuse(message)
+      Rails.logger.warn { "Engine: allocation run #{allocation_run_id} for fund #{fund.id} not started: #{message || allocation_run&.status}" }
+      allocation_run&.update_column(:status, message) if message
+      UserAlert.new(user_id:, message: message || allocation_run.status, level: :danger).broadcast if user_id
+      Refused.new(message || allocation_run&.status)
+    end
+
+    def run_operation
       # Build a shared context. In Trailblazer, this is the `ctx` hash.
       @instance_variables = {}
       @commitment_cache = AccountEntryAllocation::CommitmentCache.new(self)
@@ -88,11 +119,23 @@ module AccountEntryAllocation
         error = result[:error].presence || "Allocation run failed - see the log for the failing step"
         Rails.logger.error { "Engine: allocation run #{allocation_run_id} for fund #{fund&.id} failed: #{error}" }
         allocation_run.update_column(:status, error.to_s.truncate(2000)) if allocation_run && allocation_run.reload.status.blank?
+      elsif allocation_run && allocation_run.reload.status.blank?
+        # A run that ran no formulas (statements / ratios only) never writes a status of its own. Left
+        # blank it would read as still running, and block the fund (AllocationRun.unfinished).
+        allocation_run.update_column(:status, "Success")
       end
 
       # Return the final context or the result object for further inspection.
       result
+    rescue StandardError => e
+      # An exception ends the run in this process: record it, or the run reads as still running and
+      # blocks the fund until someone marks it crashed. A more specific status a step wrote is kept.
+      unfinished = allocation_run && AllocationRun::UNFINISHED_STATUSES.include?(allocation_run.reload.status)
+      allocation_run.update_column(:status, "Failed: #{e.class}: #{e.message}".truncate(2000)) if unfinished
+      raise
     end
+
+    public
 
     def create_variables(cached_commitment_fields)
       # Create variables available to eval here from all the cached fields

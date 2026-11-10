@@ -99,10 +99,9 @@ Given('formula {string} is edited after the preview') do |name|
 end
 
 Given('an allocation run for the fund is still in progress') do
-  WithValidationRules.skip do
-    AllocationRun.create!(entity_id: @fund.entity_id, fund: @fund, user: @user, start_date: Date.new(2024, 1, 1),
-                          end_date: Date.new(2024, 3, 31), run_allocations: true, status: "Pending")
-  end
+  # A run that is already executing: saved without validation (rule engine and one-run-per-fund check alike)
+  AllocationRun.new(entity_id: @fund.entity_id, fund: @fund, user: @user, start_date: Date.new(2024, 1, 1),
+                    end_date: Date.new(2024, 3, 31), run_allocations: true, status: "Pending").save!(validate: false)
 end
 
 # What allocation:enable_incremental[fund,<id>] APPLY=true does, without the printing: no operation row
