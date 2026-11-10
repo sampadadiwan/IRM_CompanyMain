@@ -129,7 +129,11 @@ And('I go to assign ckyc\/kra data') do
 end
 
 When('I save the KYC form') do
-  while(page.has_button?("Next") && !page.has_button?("Save"))
+  # Page through the wizard until Save shows. Save is absent on every page but the last, so a
+  # plain has_button?("Save") spent the full 15 s default wait on each of them before answering
+  # "no"; the wizard switches pages client-side, so a 1 s look is plenty. Next keeps the default
+  # wait - it is there on every page this loop clicks through.
+  while !page.has_button?("Save", wait: 1) && page.has_button?("Next")
     click_on("Next")
   end
 

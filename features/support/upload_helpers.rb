@@ -31,6 +31,21 @@ module UploadHelpers
       sleep 0.1
     end
   end
+
+  # Clicks the tab's Upload button, opening the "Upload / Download" menu first where the tab has
+  # one (the fund's Portfolio tab, secondary-sale Offers). Steps used to ask
+  # `page.has_button?("Upload / Download")` - on the Commitments, Calls and Distributions tabs, which
+  # have a plain Upload button and no such menu, that waited the full 15 s default before answering
+  # "no": ~73 uses, ~18 minutes of worker time per full suite.
+  def click_upload_on_tab
+    # One wait for the tab's content: either the menu toggle or a plain Upload button (partial
+    # match - "Upload" also matches "Upload / Download"; Upload items inside a closed menu are
+    # hidden and so do not count)
+    expect(page).to have_selector(:link_or_button, "Upload")
+    # The content is on the page now, so the menu question can be answered without waiting
+    click_on("Upload / Download") if page.has_button?("Upload / Download", wait: false)
+    click_on("Upload")
+  end
 end
 
 World(UploadHelpers)

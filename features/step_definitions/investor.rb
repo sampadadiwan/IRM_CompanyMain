@@ -1064,6 +1064,20 @@ Then('The document generation fails with error {string}') do |error|
   expect(doc.errors.full_messages.join(",")).to include error
 end
 
+# Flash messages DocumentsController redirects with once an eSign button's request has finished.
+# Each button_to submits through Turbo, so click_on returns while the request is still running;
+# the jobs behind it run inline inside that request, so its flash means the DB is up to date.
+# The failure messages are included on purpose: the fixed sleeps these replace never failed a
+# step on their own, so a refused send still fails at the step's real assertion, as before.
+ESIGN_SENT_FLASH    = /was queued for eSignature|was NOT sent for eSignature|cannot be sent for eSignature/
+ESIGN_UPDATES_FLASH = "Fetching Updates for eSignatures".freeze
+ESIGN_CANCEL_FLASH  = /eSignature\(s\) was cancelled|Error cancelling eSignature|eSignature\(s\) cannot be cancelled/
+
+# Waits for an eSign request's redirect flash instead of a fixed sleep
+def wait_for_esign_flash(message)
+  expect(page).to have_content(message, wait: 20)
+end
+
 Then('the document has {string} e_signatures') do |_string|
   allow_any_instance_of(DigioEsignHelper).to receive(:hit_digio_esign_api).and_return(sample_doc_esign_init_response)
   allow_any_instance_of(DigioEsignHelper).to receive(:retrieve_signed).and_return(retrieve_signed_response)
@@ -1076,7 +1090,8 @@ Then('the document has {string} e_signatures') do |_string|
   click_on("Signatures")
   # sleep(1)
   click_on("Send For eSignatures")
-  sleep(4)
+  # Was sleep(4): the flash renders once the send request (its EsignJob runs inline) has committed
+  wait_for_esign_flash(ESIGN_SENT_FLASH)
 end
 
 Then('the document has {string} e_signatures by Docusign') do |_string|
@@ -1093,7 +1108,9 @@ Then('the document has {string} e_signatures by Docusign') do |_string|
   click_on("Signatures")
   # sleep(1)
   click_on("Send For eSignatures")
-  # sleep(2)
+  # Let the Send request finish before navigating away - visiting mid-flight raced it, which is
+  # what the next step's sleep(5) used to cover for
+  wait_for_esign_flash(ESIGN_SENT_FLASH)
   visit(document_path(@doc))
 end
 
@@ -1117,6 +1134,8 @@ Then('the document has {string} e_signatures with status {string}') do |_string,
   click_on("Signatures")
   # sleep(1)
   click_on("Send For eSignatures")
+  # Let the send finish here - the next step's sleep(3) used to cover this in-flight request
+  wait_for_esign_flash(ESIGN_SENT_FLASH)
 end
 
 Then('the document is signed by the signatories') do
@@ -1124,12 +1143,15 @@ Then('the document is signed by the signatories') do
   allow_any_instance_of(DigioEsignHelper).to receive(:download_audit_trail).and_return(download_response)
   allow_any_instance_of(DigioEsignHelper).to receive(:retrieve_signed).and_return(retrieve_signed_response_signed)
 
-  sleep(3)
+  # No sleep(3): the previous step now waits for its send request to finish
   visit(current_path)
   # sleep(2)
   click_on("Signatures")
   # sleep(1)
   click_on("Get eSignatures' updates")
+  # DocumentEsignUpdateJob runs inside the request, so the flash means the signed statuses (and
+  # the esign log the next step reads straight from the DB) are committed
+  wait_for_esign_flash(ESIGN_UPDATES_FLASH)
 end
 
 Then('the document is signed by the docusign signatories') do
@@ -1137,7 +1159,7 @@ Then('the document is signed by the docusign signatories') do
   allow_any_instance_of(ApiCreator).to receive(:create_envelope_api).and_return(docusign_envelope_api)
   allow_any_instance_of(DocusignEsignHelper).to receive(:get_recipients).and_return(docusign_envelope_recipients_api(%w[completed completed], ESignature.pluck(:email)))
   allow_any_instance_of(DocusignEsignHelper).to receive(:download).and_return(docusign_download_response)
-  sleep(5)
+  # No sleep(5): the previous step now waits for its Send request to finish
   visit(current_url)
   # sleep(3)
   click_on("Signatures")
@@ -1148,9 +1170,9 @@ end
 Then('the esign completed document is present') do
   # allow_any_instance_of(DigioEsignHelper).to receive(:download).and_return(download_response)
   @doc = Document.where(owner_tag: "Generated").last
-  sleep(4)
+  # No sleep(4)/sleep(1): the previous step now waits for its Get updates request to finish, and
+  # the "Signed" assertions below wait for the page themselves
   visit(document_path(@doc))
-  sleep(1)
   click_on("Signatures")
   expected_status = "Signed"
   expect(page).to have_content(expected_status)
@@ -1216,12 +1238,15 @@ Then('the document get digio callbacks') do
   # @doc.update_column(:provider_doc_id, "DID2312191801389959UDGNBWGRGCSC1")
   ap @doc.e_signatures.pluck(:status)
   callbacks = [digio_callback_first_signed, digio_callback_second_signed, digio_callback_first_signed, digio_callback_both_signed, digio_callback_second_signed, digio_callback_both_signed]
-  callbacks.each do |cb|
+  # Fire the callbacks concurrently (out-of-order, duplicate webhooks are the point of the test),
+  # then wait for all of them: the next step used to sleep(4) to cover these unjoined threads
+  threads = callbacks.map do |cb|
     Thread.new do
       hit_signature_progress(cb)
       ap @doc.e_signatures.pluck(:status)
     end
   end
+  threads.each(&:join)
 end
 
 Then('the document is partially signed') do
@@ -1232,11 +1257,14 @@ Then('the document is partially signed') do
   click_on("Signatures")
   # sleep(1)
   click_on("Send For eSignatures")
-  sleep(3)
+  # Was sleep(3)
+  wait_for_esign_flash(ESIGN_SENT_FLASH)
   visit(current_path)
   click_on("Signatures")
   # sleep(1)
   click_on("Get eSignatures' updates")
+  # The visit below used to race this request with no wait at all
+  wait_for_esign_flash(ESIGN_UPDATES_FLASH)
   visit(current_path)
   click_on("Signatures")
   # sleep(2)
@@ -1258,13 +1286,15 @@ Then('the document is partially signed by Docusign') do
   click_on("Signatures")
   # sleep(1)
   click_on("Send For eSignatures")
-  sleep(2)
+  # Was sleep(2): the flash renders once the request (its EsignJob runs inline) has committed
+  wait_for_esign_flash(ESIGN_SENT_FLASH)
   visit(document_path(@doc))
   visit(current_path)
   click_on("Signatures")
   # sleep(1)
   click_on("Get eSignatures' updates")
-  sleep(8)
+  # Was sleep(8): DocumentEsignUpdateJob runs inside the request, so the flash means it is done
+  wait_for_esign_flash(ESIGN_UPDATES_FLASH)
   visit(current_path)
   click_on("Signatures")
   # page should contain status requested
@@ -1294,7 +1324,8 @@ Then('the docusign document esign is cancelled') do
   click_on("Signatures")
   # sleep(1)
   click_on("Cancel eSignatures")
-  sleep(3)
+  # Was sleep(3): cancel_esign redirects with one of these once the cancel has committed
+  wait_for_esign_flash(ESIGN_CANCEL_FLASH)
   expect(@doc.reload.esign_status.downcase).to(eq("cancelled"))
 end
 
@@ -1305,11 +1336,14 @@ Then('the document can be resent for esign') do
   # sleep(2)
   expect(page).to have_content("Re-Send for eSignatures")
   click_on("Re-Send for eSignatures")
-  sleep(2)
+  # Was sleep(2)
+  wait_for_esign_flash(ESIGN_SENT_FLASH)
   visit(current_path)
   click_on("Signatures")
   # sleep(1)
   click_on("Get eSignatures' updates")
+  # The visit below used to race this request with no wait at all
+  wait_for_esign_flash(ESIGN_UPDATES_FLASH)
   visit(current_path)
   click_on("Signatures")
   # sleep(2)
@@ -1327,12 +1361,14 @@ Then('the docusign document can be resent for esign') do
   # sleep(2)
   expect(page).to have_content("Re-Send for eSignatures")
   click_on("Re-Send for eSignatures")
-  sleep(3)
+  # Was sleep(3). The page still shows the cancel step's flash, which ESIGN_SENT_FLASH cannot match
+  wait_for_esign_flash(ESIGN_SENT_FLASH)
   visit(current_path)
   click_on("Signatures")
   # sleep(1)
   click_on("Get eSignatures' updates")
-  sleep(4)
+  # Was sleep(4)
+  wait_for_esign_flash(ESIGN_UPDATES_FLASH)
   visit(current_path)
   click_on("Signatures")
   # page should contain status requested

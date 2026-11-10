@@ -69,9 +69,16 @@ def horizontal_cap_table_investor_rows
   rows
 end
 
+# The cap table's column for one funding round, found with a single wait. The old
+# page.all(".col").find { |c| c.has_css?(...) } waited 15 s on every column before the match.
+def funding_round_column(round)
+  find_first_matching(".col", not_found: "Funding Round: #{round} not found on the cap table page") do |c|
+    c.has_css?("h1", text: "Funding Round: #{round}", wait: false)
+  end
+end
+
 def funding_round_table_rows(round)
-  col = page.all(".col").find { |c| c.has_css?("h1", text: "Funding Round: #{round}") }
-  expect(col).not_to be_nil, "Funding Round: #{round} not found on the cap table page"
+  col = funding_round_column(round)
   col.all("tbody tr").map do |tr|
     cells = tr.all("td").map { |td| td.text.strip }
     { "investor" => cells[0], "instrument" => cells[1], "quantity" => cells[2], "percentage" => cells[3],

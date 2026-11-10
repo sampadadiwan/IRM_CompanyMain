@@ -150,19 +150,19 @@ end
 # ── Cap table / horizontal cap table rendering ────────────────────────────────────────────────
 
 Then('I should see {string} with quantity {string} and fully diluted {string} in the {string} round') do |investor_name, quantity, fully_diluted, round|
-  col = page.all(".col").find { |c| c.has_css?("h1", text: "Funding Round: #{round}") }
-  expect(col).not_to be_nil, "Funding Round: #{round} not found on the cap table page"
-  row = col.all("tr").find { |r| r.has_content?(investor_name) }
-  expect(row).not_to be_nil, "No row for #{investor_name} found in the #{round} round table"
+  # Waits once for the round's table and once for the row - see find_first_matching_helpers.rb
+  col = funding_round_column(round)
+  row = find_first_matching("tr", text: investor_name, scope: col,
+                                  not_found: "No row for #{investor_name} found in the #{round} round table")
   expect(row).to have_content(quantity)
   expect(row).to have_content(fully_diluted)
 end
 
 Then('I should see {string} with quantity {string}, percentage {string}, and fully diluted {string} in the {string} round') do |investor_name, quantity, percentage, fully_diluted, round|
-  col = page.all(".col").find { |c| c.has_css?("h1", text: "Funding Round: #{round}") }
-  expect(col).not_to be_nil, "Funding Round: #{round} not found on the cap table page"
-  row = col.all("tr").find { |r| r.has_content?(investor_name) }
-  expect(row).not_to be_nil, "No row for #{investor_name} found in the #{round} round table"
+  # Waits once for the round's table and once for the row - see find_first_matching_helpers.rb
+  col = funding_round_column(round)
+  row = find_first_matching("tr", text: investor_name, scope: col,
+                                  not_found: "No row for #{investor_name} found in the #{round} round table")
   expect(row).to have_content(quantity)
   expect(row).to have_content(percentage)
   expect(row).to have_content(fully_diluted)
@@ -198,8 +198,8 @@ Given('I visit the shareholder positions list for {string}') do |company_name|
 end
 
 Then('I should see a shareholder position row for {string} with category {string}, fully diluted {string}, and quantity actual {string}') do |investor_name, category, fully_diluted, quantity_actual|
-  row = page.all("tr").find { |r| r.has_content?(investor_name) }
-  expect(row).not_to be_nil, "No shareholder position row for #{investor_name} found"
+  row = find_first_matching("tr", text: investor_name,
+                                  not_found: "No shareholder position row for #{investor_name} found")
   expect(row).to have_content(category)
   expect(row).to have_content(fully_diluted)
   expect(row).to have_content(quantity_actual)
@@ -216,15 +216,22 @@ Then('I should not see a pending updates banner') do
 end
 
 Then('I should see {string} as a pending update with Accept and Deny buttons') do |investor_name|
-  row = page.all("tr").find { |r| r.has_content?(investor_name) && (r.has_button?("Accept") || r.has_button?("Deny")) }
-  expect(row).not_to be_nil, "Expected a pending update row with Accept/Deny buttons for #{investor_name}"
+  # The approved row carries the same name but no buttons - the filter skips it with wait: false,
+  # where a waiting has_button? cost 15 s per button on every non-pending row
+  row = find_first_matching("tr", text: investor_name,
+                                  not_found: "Expected a pending update row with Accept/Deny buttons for #{investor_name}") do |r|
+    r.has_button?("Accept", wait: false) || r.has_button?("Deny", wait: false)
+  end
   expect(row).to have_button("Accept")
   expect(row).to have_button("Deny")
 end
 
 Then('I should see {string} as a pending update with a percent-only change message') do |investor_name|
-  row = page.all("tr").find { |r| r.has_content?(investor_name) && r.has_content?("%-only change") }
-  expect(row).not_to be_nil, "Expected a %-only pending update row for #{investor_name}"
+  # Both texts as one text: filter pair is not possible, so the second goes in the no-wait block
+  row = find_first_matching("tr", text: investor_name,
+                                  not_found: "Expected a %-only pending update row for #{investor_name}") do |r|
+    r.has_content?("%-only change", wait: false)
+  end
   expect(row).not_to have_button("Accept")
   expect(row).not_to have_button("Deny")
 end
@@ -233,8 +240,10 @@ end
 # needed here because each pending row renders its own Accept/Deny buttons, so a plain page-wide
 # click_on would ambiguously match every row's button when more than one is pending.
 When('I click {string} for the pending update for {string}') do |button_label, investor_name|
-  row = page.all("tr").find { |r| r.has_content?(investor_name) && r.has_button?(button_label) }
-  raise "No row with a #{button_label} button found for #{investor_name}" unless row
+  row = find_first_matching("tr", text: investor_name,
+                                  not_found: "No row with a #{button_label} button found for #{investor_name}") do |r|
+    r.has_button?(button_label, wait: false)
+  end
 
   # Confirms in #confirmModal only if the button asks (features/support/confirm_modal_helpers.rb)
   click_and_confirm_if_asked(row.find_button(button_label))

@@ -142,8 +142,8 @@ Given('Given I upload {string} file for {string} of the fund') do |file, tab|
   visit(fund_path(@fund))
   click_tab(tab)
   # sleep((0.5)
-  click_on("Upload / Download") if page.has_button?("Upload / Download")
-  click_on("Upload")
+  # Opens the Upload / Download menu only where the tab has one (upload_helpers.rb)
+  click_upload_on_tab
 
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)

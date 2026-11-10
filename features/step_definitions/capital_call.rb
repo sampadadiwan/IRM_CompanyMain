@@ -754,8 +754,8 @@ Then('Given I upload {string} file for {string} of the fund with errors') do |fi
   @import_file = file
   visit(fund_path(@fund))
   click_tab(tab)
-  click_on("Upload / Download") if page.has_button?("Upload / Download")
-  click_on("Upload")
+  # Opens the Upload / Download menu only where the tab has one (upload_helpers.rb)
+  click_upload_on_tab
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
   wait_for_upload("./public/sample_uploads/#{@import_file}") # JS direct-upload to /upload; returns once it lands (was sleep 2)
@@ -858,14 +858,21 @@ Then('when the capital call docs are generated') do
       click_on("Actions")
       click_on("Generate Documents")
     end
+    # Docs touched from here on are this run's (a regenerate updates the existing notice)
+    started_at = Time.current
     click_on("Proceed")
-    # sleep(1)
-    cc.capital_remittances.each_with_index do |cr, _count|
-      puts "Generating doc for remittance #{cr.id}. Sleeping 2 seconds...."
-      sleep(2)
-      # expect(page).to have_content("#{count + 1}: Generated #{@call_template.name} for #{cr}")
+    # Wait until every remittance has a template-generated doc from this run, instead of the old
+    # fixed sleep(2) per remittance (16 s for 8 remittances even when generation took 1 s). The
+    # cap stays at that old total and running out is NOT a failure - exactly like the sleep, so a
+    # scenario where some remittance legitimately gets no notice is no slower and no stricter.
+    deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + (2 * cc.capital_remittances.count)
+    until Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
+      generated = Document.where(owner: cc.capital_remittances).where.not(from_template_id: nil)
+                          .where(updated_at: started_at..).distinct.count(:owner_id)
+      break if generated >= cc.capital_remittances.count
+
+      sleep 0.25
     end
-    # expect(page).to have_content("generated successfully")
   end
 end
 

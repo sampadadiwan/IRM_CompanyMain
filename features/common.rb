@@ -228,7 +228,11 @@ end
 
 When('I click the tab {string}') do |args|
   # Change this to the last .nav
-  tab = all(".nav-tabs").last || all(".nav-pills").last
+  # Wait once for any tab bar, then choose without waiting: Capybara 3's all() waits for at least
+  # one match by default, so all(".nav-tabs") on a nav-pills page (the fund page, most show
+  # pages) used to spend the full 15 s before falling back to the pills.
+  expect(page).to have_css(".nav-tabs, .nav-pills")
+  tab = all(".nav-tabs", wait: false).last || all(".nav-pills", wait: false).last
   within(tab) do
     # click_tab: the screen may sit inside one of the bar's dropdown tabs (e.g. the fund page's
     # Portfolio under Performance); a plain tab is just clicked
