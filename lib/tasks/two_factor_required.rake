@@ -1,5 +1,5 @@
 # Ops tasks for "two-factor required for support and super" (OWASP 2026-11 M8).
-# openspec/changes/require-2fa-privileged-roles — design card ⑧, lld.md "Configuration and Rollout".
+# openspec/changes/archive/2026-11-10-require-2fa-privileged-roles — design card ⑧, lld.md "Configuration and Rollout".
 #
 # Run on EACH region's box (IN and US are independent servers):
 #

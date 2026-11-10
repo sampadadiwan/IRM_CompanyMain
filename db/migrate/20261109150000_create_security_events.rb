@@ -1,4 +1,4 @@
-# OWASP review 2026-11 M11 (openspec/changes/security-event-trail, design card ⑤, LLD "Schema Detail").
+# OWASP review 2026-11 M11 (openspec/changes/archive/2026-11-10-security-event-trail, design card ⑤, LLD "Schema Detail").
 #
 # The append-only security event trail: one row per sign-in, two-factor, account, role, support-access,
 # credential or export moment. A new, empty table — no backfill, nothing else changes.

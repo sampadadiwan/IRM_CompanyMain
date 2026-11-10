@@ -4,7 +4,7 @@ Feature: Security event trail — roles, support access, credentials and exports
   switch, CapHive support signing in as a client or switching into a firm, API keys, phones and connected apps,
   and every spreadsheet, folder, report and firm data download. Each is one append-only event naming the account,
   who did it and the firm. Nothing the person sees changes.
-  Design: openspec/changes/security-event-trail (business-rules.md §3, §4, §7 — H16–H27, E23–E32, E47, E48,
+  Design: openspec/changes/archive/2026-11-10-security-event-trail (business-rules.md §3, §4, §7 — H16–H27, E23–E32, E47, E48,
   X1, X2).
 
   Background:

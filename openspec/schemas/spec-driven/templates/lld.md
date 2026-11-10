@@ -265,6 +265,15 @@ of migrations; schema.rb / schema_test.rb both updated -->
 | Action / job / call | Policy method | Loaded through | Permitted params | Tenant checks | Security scenario |
 |---|---|---|---|---|---|
 
+<!-- For each design Security item 13–24 that applies, the exact helper used and where
+     (docs/security/feature_security_checklist.md). -->
+
+| Item | Helper / rule used | File | Covered by |
+|---|---|---|---|
+| <!-- 13 Stored paths --> | <!-- SafeAttributePath.read(record, key, context: "grid column") --> | <!-- --> | <!-- X3 --> |
+| <!-- 20 Security events --> | <!-- SecurityEvents.record("role.granted", …) + SecurityEventCatalogue entry --> | <!-- --> | <!-- H9 --> |
+| <!-- 21 PII and secrets --> | <!-- filter_parameters /new_column/i; DevPiiScrubber column --> | <!-- --> | <!-- --> |
+
 ## Project Rules Checklist
 
 <!-- CORE. This repo's standing rules (CLAUDE.md). Mark each Applies / N/A with a one-line

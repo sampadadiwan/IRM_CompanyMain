@@ -1,4 +1,4 @@
-# OWASP review 2026-11 M13 (openspec/changes/capital-call-distribution-maker-checker, design card ①, D6, LLD
+# OWASP review 2026-11 M13 (openspec/changes/archive/2026-11-10-capital-call-distribution-maker-checker, design card ①, D6, LLD
 # "Schema Detail").
 #
 # The firm's maker–checker switch: when on, whoever prepared a capital call or distribution cannot approve it.

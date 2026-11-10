@@ -4,7 +4,7 @@ Feature: The maker of a bank change cannot verify it by any route (OWASP review 
   refused or ignored, with the reason; people who may not verify at all are refused as before; another firm sees
   nothing; and a double-clicked popup verifies once.
   Worked examples X7–X12:
-  openspec/changes/bank-detail-change-controls/business-rules.md#5-second-person--phase-3
+  openspec/changes/archive/2026-11-10-bank-detail-change-controls/business-rules.md#5-second-person--phase-3
 
   Background:
     Given the KYC "Anil Kumar" is unverified

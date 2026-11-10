@@ -5,7 +5,7 @@ Feature: Turning two-factor off needs the password and a current code — for ev
   admin's or an investor's voluntary two-factor as much as a support user's. Support and super users
   cannot turn it off at all (required from the deploy). The user and the firm's other company admins
   are emailed; an administrator's reset of a colleague's method is told to them too.
-  Design: openspec/changes/require-2fa-privileged-roles (business-rules.md §3, H9–H11, E30–E41, X11–X14; E42 retired with the date).
+  Design: openspec/changes/archive/2026-11-10-require-2fa-privileged-roles (business-rules.md §3, H9–H11, E30–E41, X11–X14; E42 retired with the date).
 
   Background:
     Given it is "2026-12-08 10:00" in India

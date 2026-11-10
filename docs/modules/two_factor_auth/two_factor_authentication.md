@@ -279,7 +279,7 @@ Feature coverage: `features/login/two_factor_method_reset.feature`.
 
 ## Required two-factor for support and super users (OWASP 2026-11 M8)
 
-Design: `openspec/changes/require-2fa-privileged-roles` (design.md, lld.md, business-rules.md).
+Design: `openspec/changes/archive/2026-11-10-require-2fa-privileged-roles` (design.md, lld.md, business-rules.md).
 
 - **Who:** `RequiredTwoFactor::REQUIRED_2FA_ROLES = %i[support super]` — the only place the rule's
   roles are named. Company admins and everyone else keep optional 2FA.

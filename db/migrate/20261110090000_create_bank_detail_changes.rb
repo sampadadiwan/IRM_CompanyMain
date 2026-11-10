@@ -1,5 +1,5 @@
 # M14 (OWASP review 2026-11) — one row per bank change of a KYC: maker, masked before/after, second-person state and
-# once-only email stamps (openspec/changes/bank-detail-change-controls, design D6, LLD "Schema Detail").
+# once-only email stamps (openspec/changes/archive/2026-11-10-bank-detail-change-controls, design D6, LLD "Schema Detail").
 # Additive: a new table, no backfill, no lock on an existing table.
 class CreateBankDetailChanges < ActiveRecord::Migration[8.1]
   def change

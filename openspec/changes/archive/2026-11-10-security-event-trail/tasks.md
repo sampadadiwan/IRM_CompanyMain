@@ -64,7 +64,7 @@
 - [x] 3.6 Write `features/security/security_events_screen.feature` (H29–H35, E38–E44, X12) and `features/security/security_events_tenant_isolation.feature` (E45, X6–X11) in the style of `tenant_isolation_batch1.feature`.
 - [x] 3.7 UI review: screenshot Security Events (dev DB via the Warden runner script) beside Capital Calls `_index` and the mock; check breadcrumbs, header buttons, cards = filtered rows (E40), filter, tooltips, empty state, full width; fix differences.
 - [x] 3.8 N+1 check: `PROSOPITE=1 TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/security/security_events_screen.feature features/security/security_events_tenant_isolation.feature`; fix every N+1 in this change's code.
-- [ ] 3.9 Run all four `features/security/security_events_*.feature` with `TEST_ENV_NUMBER=$RANDOM` until green.
+- [x] 3.9 Run all four `features/security/security_events_*.feature` with `TEST_ENV_NUMBER=$RANDOM` until green. (Green 2026-11-10, again in the overnight full-suite run.)
 
 ## 4. Close-out
 

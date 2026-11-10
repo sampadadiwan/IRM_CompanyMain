@@ -11,7 +11,7 @@
 # Nothing here is stored per user. TwoFactorAuthenticatable#two_factor_required? reads the user's cached roles, and
 # every sign-in door asks #two_factor_applies?.
 #
-# openspec/changes/require-2fa-privileged-roles — design card ①, decision D1 ("Changed during the build" C-day-one).
+# openspec/changes/archive/2026-11-10-require-2fa-privileged-roles — design card ①, decision D1 ("Changed during the build" C-day-one).
 module RequiredTwoFactor
   # The roles that must use two-factor. Order matters only for #role_label: a support user switched into a client
   # also holds company_admin, and a user holding both support and super reads "Support" (E12).

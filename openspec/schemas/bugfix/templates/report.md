@@ -202,6 +202,18 @@ least one is required: a bug fix whose tests all pass before the fix has not rep
 
 ---
 
+## Security
+
+<!-- CORE. The items from docs/security/feature_security_checklist.md that this bug broke or this fix
+     touches (usually 1–4 of the 24). For a security bug, add a line on whether the same mistake exists
+     elsewhere (the grep run, or the drift guard added). Touches none: "None — <reason>". -->
+
+| # | Item | How the fix meets it | Test |
+|---|---|---|---|
+| <!-- 19 --> | <!-- Verification flags --> | <!-- `verified` permitted only when toggle_verified? holds for the record --> | <!-- X2 --> |
+
+---
+
 ## Risks and Rollout
 
 - <!-- [Risk] → Mitigation -->
@@ -212,6 +224,17 @@ least one is required: a bug fix whose tests all pass before the fix has not rep
 | **Data backfill needed?** | <!-- No / what, and whether it is reversible --> |
 | **Both regions together?** | <!-- No / Yes, and why (IN and US are independent) --> |
 | **Rollback** | <!-- how, and whether anything persists that the old code cannot read --> |
+
+### Post-deploy steps
+
+<!-- CORE. Every manual thing to do after deploy, per environment (all, production, staging_in,
+     production_in, production_us) with the exact command, or one line "None — <reason>".
+     Copied into post_deploy_steps/<change-name>.md by the last task (post_deploy_steps/README.md);
+     every deploy asks the deployer to answer each step. -->
+
+| Step id | Environment | What to do (exact command) | Done when |
+|---|---|---|---|
+| <!-- backfill --> | <!-- production --> | <!-- bin/rails foo:backfill, then EXECUTE=1 --> | <!-- prints 0 left --> |
 
 ---
 

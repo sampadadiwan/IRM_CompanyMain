@@ -2,7 +2,7 @@
 
 # ③ Who prepared this capital call / distribution, and the firm's maker–checker switch, as the approval rule (④),
 # the pages (⑥) and the notices (⑦) read them (OWASP review 2026-11 M13,
-# openspec/changes/capital-call-distribution-maker-checker, design card ③, LLD "Method Contracts").
+# openspec/changes/archive/2026-11-10-capital-call-distribution-maker-checker, design card ③, LLD "Method Contracts").
 #
 # Included in CapitalCall and CapitalDistribution, next to ApprovalFigureWatch (②), which calls record_preparer!.
 # Every read is memoised on the record instance, so one page asks the database at most three times (Query budget).

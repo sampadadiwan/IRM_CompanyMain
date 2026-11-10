@@ -5,7 +5,7 @@ Feature: A bank detail change clears Bank Verified in the same save (OWASP revie
   whatever value of Bank Verified was sent. A change on a verified KYC also unverifies it. Bank name, branch, account
   type and full name do not count; neither does the same value re-typed.
   Worked examples H1–H3, E1–E10, X1:
-  openspec/changes/bank-detail-change-controls/business-rules.md#1-clear-on-change--phase-1
+  openspec/changes/archive/2026-11-10-bank-detail-change-controls/business-rules.md#1-clear-on-change--phase-1
 
   # H1 — Happy path: Meera changes Anil's account (checks off) → Bank Verified off straight after the save
   Scenario: H1 Account change clears Bank Verified

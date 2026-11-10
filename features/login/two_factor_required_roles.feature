@@ -4,7 +4,7 @@ Feature: Two-factor is required for support and super users
   is deployed, in every region (user decision 2026-11-09: no enforcement date or notice period). A required
   user with no method is sent through the existing "choose a method" set-up inside sign-in; company
   admins, employees and investors keep today's optional two-factor.
-  Design: openspec/changes/require-2fa-privileged-roles (business-rules.md §1, H1–H3, E5–E19, X1–X2; E1–E4 and E20 retired with the date).
+  Design: openspec/changes/archive/2026-11-10-require-2fa-privileged-roles (business-rules.md §1, H1–H3, E5–E19, X1–X2; E1–E4 and E20 retired with the date).
 
   Background:
     Given it is "2026-12-02 10:00" in India

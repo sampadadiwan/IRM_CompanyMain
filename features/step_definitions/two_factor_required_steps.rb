@@ -4,7 +4,7 @@
 #   features/login/two_factor_turn_off.feature         (TO — §3)
 #   features/security/two_factor_required_roles.feature (SEC — every refusal / direct request)
 #
-# The people are the cast in openspec/changes/require-2fa-privileged-roles/business-rules.md
+# The people are the cast in openspec/changes/archive/2026-11-10-require-2fa-privileged-roles/business-rules.md
 # "Shared setup" (Ravi, Anita, Sam … Tara). Each is created on first mention, with the roles and
 # two-factor state the table gives them, so a scenario names only the people it needs.
 #

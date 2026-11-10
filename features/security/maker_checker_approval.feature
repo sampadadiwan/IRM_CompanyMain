@@ -4,7 +4,7 @@ Feature: Maker–checker cannot be bypassed (OWASP review 2026-11 M13 — F5)
   JSON API and bulk approve — and nobody outside the firm, no investor and no read-only user can approve or ask
   for approval. Mass assignment can't set the approval.
   Worked examples X3–X15:
-  openspec/changes/capital-call-distribution-maker-checker/business-rules.md#5-direct-requests-api-bulk-other-firms--phase-2
+  openspec/changes/archive/2026-11-10-capital-call-distribution-maker-checker/business-rules.md#5-direct-requests-api-bulk-other-firms--phase-2
 
   Background:
     Given the firm "Nilgiri Capital" has maker-checker on

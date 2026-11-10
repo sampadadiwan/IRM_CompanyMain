@@ -6,7 +6,7 @@ Feature: A second person verifies a bank change (OWASP review 2026-11 M14 — §
   investor or by System can be confirmed by any approver. A firm with no other approver who can see the KYC lets its
   only approver verify after a warning card, recorded as "only approver". UnVerify stays open to everyone allowed.
   Worked examples H9–H11, E32–E46:
-  openspec/changes/bank-detail-change-controls/business-rules.md#5-second-person--phase-3
+  openspec/changes/archive/2026-11-10-bank-detail-change-controls/business-rules.md#5-second-person--phase-3
 
   # H9 — Happy path: Meera's change awaits; Ravi clicks Verify, reads the cards, clicks "Verify KYC" → verified;
   # the note reads "Confirmed by Ravi Iyer on 10/11/2026"

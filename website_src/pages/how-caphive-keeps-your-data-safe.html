@@ -1,0 +1,376 @@
+---
+title: "How CapHive keeps your fund's data safe | CapHive"
+description: How CapHive protects fund and investor data, in plain terms. Regular security
+  reviews, strict separation between firms, a second person on bank-detail changes,
+  and a Security Events screen that shows your admins what happened.
+og_title: "How CapHive keeps your fund's data safe"
+og_description: Regular security reviews, strict separation between firms, second-person
+  controls on money, and a record your admins can read. What we do, and what you can do.
+data_page: resources
+og_type: article
+body_extra: |
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "How CapHive keeps your fund's data safe",
+    "description": "How CapHive protects fund and investor data, in plain terms. Regular security reviews, strict separation between firms, a second person on bank-detail changes, and a Security Events screen that shows your admins what happened.",
+    "datePublished": "2026-11-10",
+    "author": { "@type": "Organization", "name": "CapHive" },
+    "publisher": { "@type": "Organization", "name": "CapHive" },
+    "mainEntityOfPage": "https://caphive.com/how-caphive-keeps-your-data-safe.html"
+  }
+  </script>
+---
+
+
+<style>
+/* page-local (kept out of caphive.css to avoid a cache-bust) */
+.dgm{margin:34px 0}
+.dgm > div{background:#FFFFFF;border:1px solid var(--line);border-radius:14px;padding:22px;overflow-x:auto}
+.dgm svg{display:block;width:100%;height:auto;min-width:640px}
+.dgm figcaption{margin-top:14px;font-size:14px;line-height:1.6;color:var(--mut);max-width:720px}
+.dgm text{font-family:var(--font)}
+.d-box{fill:#FFFFFF;stroke:var(--fg);stroke-width:1.3}
+.d-box-soft{fill:var(--cream);stroke:var(--line);stroke-width:1.3}
+.d-box-hot{fill:#FFF3ED;stroke:var(--orange);stroke-width:1.3}
+.d-hub{fill:#FFFFFF;stroke:var(--orange);stroke-width:2}
+.d-t{font-size:13px;font-weight:600;fill:var(--fg)}
+.d-s{font-family:var(--mono);font-size:10.5px;fill:var(--mut);letter-spacing:.02em}
+.d-p{font-family:var(--mono);font-size:10.5px;fill:var(--orange-2);letter-spacing:.02em}
+.d-hdr{font-family:var(--mono);font-size:10px;fill:var(--mut);letter-spacing:.14em}
+.d-tag{font-size:12px;font-weight:600;fill:var(--orange-2)}
+.d-n{fill:var(--orange)}
+.d-n-t{font-size:11px;font-weight:700;fill:#FFFFFF}
+.d-life{stroke:var(--line);stroke-width:1.4;stroke-dasharray:4 5;fill:none}
+.d-line{stroke:var(--fg);stroke-width:1.3;fill:none}
+.d-line-hot{stroke:var(--orange);stroke-width:1.6;fill:none}
+</style>
+
+<article>
+  <!-- ================= ARTICLE HERO ================= -->
+  <header class="page-hero article-hero hero-tinted tint-black">
+    <div class="wrap">
+      <div class="hero-panel">
+        <div class="article-measure">
+          <nav class="crumbs" aria-label="Breadcrumb">
+            <a href="index.html">Home</a><span>/</span><a href="blog.html">Insights</a><span>/</span>Keeping your data safe
+          </nav>
+          <span class="chip-label">Security</span>
+          <h1 style="margin-top:22px">How <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> keeps <em>your fund's data safe.</em></h1>
+          <p class="lede">
+            You trust us with capital accounts, investor bank details, identity documents and
+            valuations that have not been published yet. Here is how we protect them, in plain
+            terms, and the controls you can use yourself.
+          </p>
+          <div class="article-meta">
+            <time datetime="2026-11-10">Nov 10, 2026</time>
+            <span class="dot">·</span>
+            <span>6 min read</span>
+            <span class="dot">·</span>
+            <span>Security</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= ARTICLE BODY ================= -->
+  <div class="article-body">
+    <div class="wrap">
+      <div class="article-card">
+        <div class="article-measure">
+          <div class="prose">
+
+        <h2 id="layers">Several layers, not one wall</h2>
+        <p>
+          No single control should be all that stands between someone and your data. So we build
+          in layers. Each one works on its own, and if one of them ever had a problem, the
+          others would still be in the way.
+        </p>
+        <figure class="dgm">
+          <div>
+<svg viewBox="0 0 900 340" role="img" aria-label="A request for your fund's data passes four layers before it reaches the data: sign-in with a password and a code, where two-factor is required for CapHive staff; a check that the data belongs to your firm, which is always on; your roles, set by your admins, per fund, investor and document; and a second person for bank-detail changes and, optionally, capital calls and distributions. Everything is recorded and watched throughout: the Security Events screen, alerts to your admins, and CapHive's own monitoring. Your fund data stays in its own region.">
+<defs>
+  <marker id="ar1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#101010"/></marker>
+  <marker id="arh1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#FF4D00"/></marker>
+  <symbol id="pp1" viewBox="0 0 11 11"><circle cx="5.5" cy="3.2" r="2.6" fill="#FF4D00"/><path d="M0.6 11 C0.6 6.6 10.4 6.6 10.4 11 Z" fill="#FF4D00"/></symbol>
+</defs>
+<text class="d-hdr" x="68" y="34" text-anchor="middle">WHO ASKS</text>
+<text class="d-hdr" x="430" y="34" text-anchor="middle">FOUR LAYERS, EACH CHECKED ON ITS OWN</text>
+<text class="d-hdr" x="813" y="34" text-anchor="middle">WHAT IT REACHES</text>
+<!-- who asks -->
+<rect class="d-box-soft" x="8" y="50" width="120" height="130" rx="10"/>
+<text class="d-t" x="20" y="104">A request</text>
+<text class="d-s" x="20" y="122">you, an LP or</text>
+<text class="d-s" x="20" y="138">our support</text>
+<path class="d-line" d="M128 115 L146 115" marker-end="url(#ar1)"/>
+<!-- layer 1 -->
+<rect class="d-box" x="150" y="50" width="122" height="130" rx="10"/>
+<circle class="d-n" cx="172" cy="74" r="10"/>
+<text class="d-n-t" x="172" y="78" text-anchor="middle">1</text>
+<text class="d-t" x="162" y="104">Sign-in</text>
+<text class="d-s" x="162" y="122">password + code</text>
+<text class="d-s" x="162" y="138">2FA: our staff</text>
+<use href="#pp1" x="162" y="154" width="11" height="11"/>
+<text class="d-p" x="178" y="163">You + us</text>
+<path class="d-line" d="M272 115 L292 115" marker-end="url(#ar1)"/>
+<!-- layer 2 -->
+<rect class="d-box" x="296" y="50" width="122" height="130" rx="10"/>
+<circle class="d-n" cx="318" cy="74" r="10"/>
+<text class="d-n-t" x="318" y="78" text-anchor="middle">2</text>
+<text class="d-t" x="308" y="104">Your firm only</text>
+<text class="d-s" x="308" y="122">no other firm</text>
+<text class="d-s" x="308" y="138">can reach it</text>
+<use href="#pp1" x="308" y="154" width="11" height="11"/>
+<text class="d-p" x="324" y="163">Always on</text>
+<path class="d-line" d="M418 115 L438 115" marker-end="url(#ar1)"/>
+<!-- layer 3 -->
+<rect class="d-box" x="442" y="50" width="122" height="130" rx="10"/>
+<circle class="d-n" cx="464" cy="74" r="10"/>
+<text class="d-n-t" x="464" y="78" text-anchor="middle">3</text>
+<text class="d-t" x="454" y="104">Your roles</text>
+<text class="d-s" x="454" y="122">per fund,</text>
+<text class="d-s" x="454" y="138">investor, doc</text>
+<use href="#pp1" x="454" y="154" width="11" height="11"/>
+<text class="d-p" x="470" y="163">Your admins</text>
+<path class="d-line" d="M564 115 L584 115" marker-end="url(#ar1)"/>
+<!-- layer 4 -->
+<rect class="d-box-hot" x="588" y="50" width="122" height="130" rx="10"/>
+<circle class="d-n" cx="610" cy="74" r="10"/>
+<text class="d-n-t" x="610" y="78" text-anchor="middle">4</text>
+<text class="d-t" x="600" y="104">Second person</text>
+<text class="d-s" x="600" y="122">bank details;</text>
+<text class="d-s" x="600" y="138">calls, payouts</text>
+<use href="#pp1" x="600" y="154" width="11" height="11"/>
+<text class="d-p" x="616" y="163">Approvers</text>
+<path class="d-line-hot" d="M710 115 L730 115" marker-end="url(#arh1)"/>
+<!-- the data -->
+<rect class="d-hub" x="734" y="50" width="158" height="130" rx="14"/>
+<text class="d-t" x="813" y="104" text-anchor="middle" style="font-size:15px">Your fund data</text>
+<text class="d-s" x="813" y="124" text-anchor="middle">kept in its own</text>
+<text class="d-s" x="813" y="140" text-anchor="middle">region: India · US</text>
+<!-- recorded and watched -->
+<path class="d-life" d="M211 180 L211 206"/>
+<path class="d-life" d="M357 180 L357 206"/>
+<path class="d-life" d="M503 180 L503 206"/>
+<path class="d-life" d="M649 180 L649 206"/>
+<path class="d-life" d="M813 180 L813 206"/>
+<rect class="d-box-soft" x="150" y="206" width="742" height="56" rx="10"/>
+<text class="d-t" x="166" y="230">Recorded and watched throughout</text>
+<text class="d-s" x="166" y="248">Security Events screen · alerts to your admins · our own monitoring</text>
+<rect class="d-box-hot" x="37" y="290" width="262" height="34" rx="17"/>
+<text class="d-tag" x="168" y="312" text-anchor="middle">Every fix backed by a test</text>
+<rect class="d-box-hot" x="319" y="290" width="262" height="34" rx="17"/>
+<text class="d-tag" x="450" y="312" text-anchor="middle">Your admins see what happened</text>
+<rect class="d-box-hot" x="601" y="290" width="262" height="34" rx="17"/>
+<text class="d-tag" x="732" y="312" text-anchor="middle">Data stays in its region</text>
+</svg>
+          </div>
+          <figcaption>Four layers sit between any request and your fund's data. Your admins set the roles and approvers; we run the rest. Second-person approval on capital calls and distributions is optional.</figcaption>
+        </figure>
+
+        <h2 id="reviews">We review ourselves regularly, and keep the fixes fixed</h2>
+        <ul>
+          <li><strong>Regular security reviews.</strong> We review the platform against the
+            <strong>OWASP Top 10</strong>, the industry's standard list of the most common
+            ways web applications are attacked, looking at it the way an attacker would.</li>
+          <li><strong>Fixed by severity.</strong> Findings are ranked, and the most serious are
+            fixed first. Every fix is re-tested before it ships.</li>
+          <li><strong>Two automated tests per fix.</strong> One tries the problem again and must
+            be refused. The other proves your normal work still runs exactly as before.</li>
+          <li><strong>They stay in our test suite.</strong> A later change that brought a problem
+            back would fail them.</li>
+        </ul>
+
+        <h2 id="separation">Your firm's data is only ever your firm's</h2>
+        <p>
+          Many firms use <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span>, but
+          each one sees only its own data. This is the rule we guard most closely.
+        </p>
+        <ul>
+          <li><strong>Every record belongs to one firm.</strong> Screens, reports, exports,
+            dashboards, the API and AI connections all check that before showing anything.</li>
+          <li><strong>LPs see only their own accounts.</strong> An investor signing in sees
+            their own commitments, notices and documents, nothing else.</li>
+          <li><strong>Checked automatically.</strong> Our tests sign in as one firm and try to
+            open another firm's records. They must be refused, every time.</li>
+        </ul>
+        <div class="pull"><p>The most important thing a shared platform does is keep each firm's data apart. So we test it the way someone would try to break it.</p></div>
+
+        <h2 id="money">Changes that move money need a second person</h2>
+        <p>
+          When someone changes where an investor's money goes, another approver in your firm
+          confirms it, and the investor hears about it.
+        </p>
+        <p><strong>Example.</strong> Meera updates an investor's bank account from …4821 to …7310.</p>
+        <ol>
+          <li>The <strong>Bank Verified</strong> tick is cleared straight away.</li>
+          <li>The investor gets an email saying their bank details changed, and what to do if
+            they didn't ask for it.</li>
+          <li>Your other KYC approvers get a "please review" email.</li>
+          <li>Meera's own <strong>Verify</strong> button is greyed out, with a tooltip saying why.</li>
+          <li>Ravi, another approver, checks the new account and verifies it.</li>
+        </ol>
+        <p>
+          This covers the account number, the IFSC code, and any SWIFT or IBAN field marked as a
+          payout field on your forms. Distributions flag any bank change that hasn't been
+          confirmed yet, so your team sees it before money goes out. If your firm has only one
+          approver, they can confirm their own change after an extra warning, and that is
+          recorded.
+        </p>
+        <p><strong>Maker–checker on capital calls and distributions</strong> is there when your firm wants it:</p>
+        <ul>
+          <li>Whoever prepared a call or distribution can't also approve it.</li>
+          <li>They press <strong>Request approval</strong> to email your other approvers.</li>
+          <li>If the figures change after approval, the approval is withdrawn.</li>
+          <li>Every approved call or distribution shows who prepared it.</li>
+        </ul>
+
+        <h2 id="our-access">Our own access to your account</h2>
+        <ul>
+          <li><strong>Two-factor for our staff.</strong> Everyone on our team who can sign in to
+            client accounts must use two-factor authentication.</li>
+          <li><strong>Only the access each person needs.</strong> Our staff are given the
+            narrowest access their job requires, and no more.</li>
+          <li><strong>You decide.</strong> Our support team can sign in to help a user only while
+            that user's <strong>Enable support</strong> switch is on. You can turn it off at any time.</li>
+          <li><strong>You can see it.</strong> When support signs in to help, it appears in your
+            admins' notification bell and on the Security Events screen. Your admins are emailed whenever
+            the Enable support switch changes.</li>
+        </ul>
+
+        <h2 id="security-events">See it for yourself: Security Events</h2>
+        <p>
+          Company admins have a <strong>Security Events</strong> screen, under Settings. It lists
+          sign-ins, failed sign-ins, role changes, two-factor changes, API tokens, support access
+          and more, for your firm only.
+        </p>
+        <ul>
+          <li><strong>Every row explains itself.</strong> A "What to do" button says when the
+            event is normal and what to do if it isn't.</li>
+          <li><strong>Alerts for the changes that matter.</strong> Your admins are emailed when
+            someone is given or loses an admin or approver role, for example
+            "Approver role given to Rahul Mehta".</li>
+          <li><strong>Kept for over a year,</strong> so you can look back across a full audit cycle.</li>
+          <li><strong>Reviewed by us too.</strong> Our own team reviews a weekly summary of security events.</li>
+        </ul>
+
+        <h2 id="personal-data">Personal data, handled with care</h2>
+        <ul>
+          <li><strong>Kept out of logs and error reports.</strong> Tax IDs, bank details and sign-in
+            information are filtered out before anything is written to a log or an error report.</li>
+          <li><strong>Secrets encrypted.</strong> Keys your firm stores for connected services are
+            kept encrypted.</li>
+          <li><strong>No real client data in development.</strong> When data is copied for building
+            and testing the product, real personal details such as tax IDs and bank accounts are
+            removed from the copy.</li>
+          <li><strong>Your region, your data.</strong> India and US clients run on separate
+            regional environments, and data stays in its own region.</li>
+          <li><strong>Monitored.</strong> Our systems watch for unusual activity and alert our
+            team when they see it.</li>
+        </ul>
+
+        <h2 id="what-you-can-do">What you can do</h2>
+        <div class="callout"><ol>
+          <li><strong>Turn on two-factor authentication</strong> for every user, starting with
+            your admins and approvers. Switching it off later needs the password and a current code.</li>
+          <li><strong>Look at Security Events now and then.</strong> A role change or sign-in you
+            don't recognise is worth a question.</li>
+          <li><strong>Use maker–checker</strong> on capital calls and distributions if you have two
+            or more approvers. Ask us and we will switch it on for your firm.</li>
+          <li><strong>Keep admin and approver roles tight.</strong> Give them to the people who
+            need them, and remove them when someone changes role or leaves.</li>
+          <li><strong>Switch Enable support on only when you need help,</strong> and off again afterwards.</li>
+          <li><strong>Tell us about anything odd</strong> at
+            <a href="mailto:support@caphive.com">support@caphive.com</a>. We would much rather
+            hear about something harmless than miss something real.</li>
+        </ol></div>
+        <p>
+          Security is never finished, and we don't claim any system is beyond attack. What we
+          can promise is that we keep checking, keep fixing, and keep you able to see what is
+          happening in your own account.
+        </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= CLOSING ================= -->
+  <section class="section">
+    <div class="wrap">
+      <div class="band-dark reveal">
+        <span class="chip-label">For your diligence team</span>
+        <h2 style="margin:20px 0 16px">Questions about security? <em>Ask us directly.</em></h2>
+        <p style="margin-bottom:26px">
+          If your team or your investors have a security questionnaire, we answer it directly
+          and walk you through the controls. Our Security &amp; Trust page sets out how to request
+          the material.
+        </p>
+        <a class="btn btn-primary" href="security.html">Security &amp; Trust <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      </div>
+      <div class="article-measure" style="margin-top:8px">
+        <div class="byline">
+          <span class="avatar">CH</span>
+          <span>
+            <strong><span class="wordmark"><span class="wm-cap">Cap</span>Hive</span></strong>
+            <span>Written by the <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> team</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+</article>
+
+<!-- ================= RELATED ================= -->
+<section class="section" style="padding-top:40px">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Where this leads</span>
+      <h2>Controls that protect <em>your investors.</em></h2>
+    </div>
+    <div class="f-grid reveal" data-delay="1">
+      <a class="link-card" href="security.html">
+        <div>
+          <span class="kick">Trust</span>
+          <h3>Security &amp; Trust</h3>
+          <p>Access control, audit logging, hosting, backups, and what your fund controls at every step.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="capital-call-notices.html">
+        <div>
+          <span class="kick">Capital calls</span>
+          <h3>The most expensive email your fund sends</h3>
+          <p>Why a capital call notice's pre-flight checklist has no settings at all.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="distribution-readiness.html">
+        <div>
+          <span class="kick">Distributions</span>
+          <h3>Before a distribution leaves the building</h3>
+          <p>Five things that must be true before money goes out, checked every time.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="products.html">Explore the platform</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>

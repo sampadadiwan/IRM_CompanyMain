@@ -98,6 +98,11 @@ step (J2.3 = journey 2, step 3) · **R** = Role sweep · **C** = Cross-cutting c
 | ☐ | C4 | Tenant isolation | A user in a different entity cannot see or reach any of this data, even with a direct URL | | |
 | ☐ | C5 | Regression on modified screens | Each modified screen still does what it did before | | |
 | ☐ | C6 | Empty states | New lists/panels with no data show a sensible message | | |
+| ☐ | C8 | Direct link without the role | A user without the role is refused, even pasting the URL or using the API — not just a hidden button | | |
+| ☐ | C9 | Support signed in as a client | The privileged parts (tokens, approvals, verifying, password resets) are refused or say why; the client's bell / Security Events show the support access | | |
+| ☐ | C10 | Maker can't approve their own change | Where money or payout details change, the person who made the change can't approve or verify it; another approver can | | |
+| ☐ | C11 | Names with HTML | A record named `<b>Test</b>` shows the tags as text everywhere this feature shows it | | |
+| ☐ | C12 | Security events | Privileged actions in this feature appear on Security Events with a sensible "What to do" | | |
 | ☐ | C7 | Looks like the rest of CapHive | Each changed screen matches the reference screen in design.md *Screen standards*: breadcrumbs, header buttons + Actions dropdown, stats cards, standard table + filter, full width | | |
 | ☐ | C8 | No full page reloads for small actions | Tabs fade in place and load lazily; row actions (approve, assign, mark done…) update just the row and cards | | |
 | ☐ | C9 | Explains itself | Every page has a title ⓘ explaining it; computed columns and labels have tooltips; empty lists say what to do next | | |

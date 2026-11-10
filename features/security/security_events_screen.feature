@@ -4,7 +4,7 @@ Feature: Security Events screen, admin alerts, weekly pack and retention (OWASP 
   spreadsheet by email — and are emailed when someone gets or loses admin or approver power, or CapHive support
   signs in. CapHive's support mailbox gets every region's events each Monday; events older than 13 months are
   removed every night. Every screen element and email explains why it is there and what to do.
-  Design: openspec/changes/security-event-trail (business-rules.md §6 — H29–H35, E38–E44, E50, X12).
+  Design: openspec/changes/archive/2026-11-10-security-event-trail (business-rules.md §6 — H29–H35, E38–E44, E50, X12).
 
   Background:
     Given today is "2026-11-09 12:00" for the security trail

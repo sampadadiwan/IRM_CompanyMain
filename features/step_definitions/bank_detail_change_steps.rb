@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Steps for bank detail change controls (OWASP review 2026-11 M14,
-# openspec/changes/bank-detail-change-controls — business-rules.md has every H/E/X row):
+# openspec/changes/archive/2026-11-10-bank-detail-change-controls — business-rules.md has every H/E/X row):
 #   features/core/bank_detail_change_reset.feature              §1 Clear on change
 #   features/security/bank_detail_change_fields.feature         §2 Protected fields
 #   features/core/bank_detail_change_record.feature             §3 Change record and KYC page

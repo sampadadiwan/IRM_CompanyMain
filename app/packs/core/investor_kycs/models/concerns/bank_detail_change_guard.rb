@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# ② The change guard (OWASP review 2026-11 M14, openspec/changes/bank-detail-change-controls, design card ②,
+# ② The change guard (OWASP review 2026-11 M14, openspec/changes/archive/2026-11-10-bank-detail-change-controls, design card ②,
 # D1–D5; LLD "Method Contracts › BankDetailChangeGuard", "Transactions").
 #
 # Included in InvestorKyc. Every way a KYC is saved — the KYC form, the JSON API, imports, Document Checks and AI

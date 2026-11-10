@@ -78,7 +78,7 @@ class InvestorKyc < ApplicationRecord
   include InvestorKycConcern
   include WithSupportAgent
   # M14 — a change of account number / IFSC clears Bank Verified, unverifies, is recorded and needs a second
-  # person (openspec/changes/bank-detail-change-controls, design card ②)
+  # person (openspec/changes/archive/2026-11-10-bank-detail-change-controls, design card ②)
   include BankDetailChangeGuard
 
   belongs_to :investor

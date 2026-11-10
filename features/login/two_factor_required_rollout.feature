@@ -5,7 +5,7 @@ Feature: Required two-factor roll-out — Set up now, Login as and the ops tasks
   banner. A support or super user still signed in from before the deploy sees "Set up now" on their own user
   page, and Login as needs their own verified method. Ops measures progress with a counts-only report and, on
   deploy day, ends the remember-me cookies and website-made tokens of anyone still unverified.
-  Design: openspec/changes/require-2fa-privileged-roles (business-rules.md §2, H4–H8, E27, E29).
+  Design: openspec/changes/archive/2026-11-10-require-2fa-privileged-roles (business-rules.md §2, H4–H8, E27, E29).
 
   # ── Happy path ────────────────────────────────────────────────────────────────
 

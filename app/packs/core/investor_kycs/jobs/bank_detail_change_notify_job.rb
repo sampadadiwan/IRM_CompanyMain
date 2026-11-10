@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# ④ The change emails (OWASP review 2026-11 M14, openspec/changes/bank-detail-change-controls, design card ④, D8, D9;
+# ④ The change emails (OWASP review 2026-11 M14, openspec/changes/archive/2026-11-10-bank-detail-change-controls, design card ④, D8, D9;
 # LLD "Background Jobs", "Queries").
 #
 # Enqueued by BankDetailChangeGuard after the KYC save that made a bank change commits. Sends, at most once each:

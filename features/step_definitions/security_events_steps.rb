@@ -1,4 +1,4 @@
-# Steps for the security event trail (OWASP review 2026-11 M11, openspec/changes/security-event-trail):
+# Steps for the security event trail (OWASP review 2026-11 M11, openspec/changes/archive/2026-11-10-security-event-trail):
 #   features/security/security_events_sign_in.feature          (SI — business-rules §1, §2, §5, §7)
 #   features/security/security_events_access.feature           (AC — §3, §4, §7)
 #   features/security/security_events_screen.feature           (SC — §6)

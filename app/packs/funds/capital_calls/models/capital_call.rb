@@ -19,7 +19,7 @@ class CapitalCall < ApplicationRecord
 
   # M13 (OWASP 2026-11) K4 — maker–checker: who prepared this call (③) and the change watcher (②) that records them and,
   # with the firm's setting on, withdraws the approval when a person changes a figure after it.
-  # openspec/changes/capital-call-distribution-maker-checker/design.md cards ② ③
+  # openspec/changes/archive/2026-11-10-capital-call-distribution-maker-checker/design.md cards ② ③
   include WithApprovalMakers
   include ApprovalFigureWatch
 

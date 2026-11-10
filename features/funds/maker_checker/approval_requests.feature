@@ -4,8 +4,8 @@ Feature: Request approval and the switch-off notice (OWASP review 2026-11 M13 �
   checker (an approver with fund access who didn't prepare it) gets an email and a bell alert, at most once an hour.
   Switching the setting off tells every other company admin and approver of the firm.
   Worked examples H18–H20, E32–E39, E56, H25, E54–E55:
-  openspec/changes/capital-call-distribution-maker-checker/business-rules.md#6-request-approval--phase-3
-  openspec/changes/capital-call-distribution-maker-checker/business-rules.md#8-switch-off-notice--phase-3
+  openspec/changes/archive/2026-11-10-capital-call-distribution-maker-checker/business-rules.md#6-request-approval--phase-3
+  openspec/changes/archive/2026-11-10-capital-call-distribution-maker-checker/business-rules.md#8-switch-off-notice--phase-3
 
   # H18 — Happy path: Meera requests approval of Q4 → Ravi and Priya get the email and the bell; the popup said so
   Scenario: H18 The preparer requests approval

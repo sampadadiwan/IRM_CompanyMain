@@ -41,3 +41,8 @@
 - [ ] 3.5 UI check (if the fix touches a screen): screenshot it beside its unchanged neighbours and
       confirm it still matches the app's standard screens (breadcrumbs, tabs, buttons, tooltips).
       Otherwise write "no screens touched".
+- [ ] 3.6 Security: each item in the report's Security table is met and its test is green; Brakeman
+      clean for the changed files (docs/security/feature_security_checklist.md).
+- [ ] 3.7 Post-deploy steps: write `post_deploy_steps/<change-name>.md` from the report's *Post-deploy
+      steps* (or `None — <reason>`); run `bin/rails post_deploy:lint` and
+      `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/core/post_deploy_steps.feature` green.

@@ -8,7 +8,7 @@ Feature: Payout custom fields (SWIFT / IBAN) follow the bank change rules (OWASP
   Horizon's Individual KYC form has SWIFT Code, IBAN, Intermediary Bank Name (text) and Foreign account? (check box);
   its Non-Individual form has SWIFT Code. Farah Ali (Individual) holds SWIFT EBILAEADXXX and IBAN ending 3456.
   Worked examples H18–H21, E63–E80:
-  openspec/changes/bank-detail-change-controls/business-rules.md#8-payout-custom-fields-swift--iban--phase-6
+  openspec/changes/archive/2026-11-10-bank-detail-change-controls/business-rules.md#8-payout-custom-fields-swift--iban--phase-6
 
   Background:
     Given Horizon Capital's KYC forms have the SWIFT and IBAN custom fields

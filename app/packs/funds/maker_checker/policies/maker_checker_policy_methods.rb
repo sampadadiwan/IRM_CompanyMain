@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# ④ The approval rule (OWASP review 2026-11 M13, openspec/changes/capital-call-distribution-maker-checker, design
+# ④ The approval rule (OWASP review 2026-11 M13, openspec/changes/archive/2026-11-10-capital-call-distribution-maker-checker, design
 # card ④, D5, D7, D9; LLD "Method Contracts").
 #
 # Included in CapitalCallPolicy and CapitalDistributionPolicy (like WorkflowablePolicyMethods). approve? gains one

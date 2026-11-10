@@ -431,19 +431,38 @@ erDiagram
 
 #### Security
 
-<!-- CORE — never omitted, never "N/A". One row per item; every new action, job, policy, upload,
-     AI call and token appears. Items: 1 Authorization (Pundit, policy_scope then authorize),
-     2 Tenant isolation (entity + parent ids same-firm, ForInvestor), 3 Mass assignment,
-     4 No code from data (eval/constantize/send allowlists), 5 Injection (SQL, Ransack allowlist,
-     XSS, paths), 6 Background jobs (reload + re-check access), 7 Files and documents,
-     8 AI/LLM (prompt injection, no write tools, validated structured output, entity-only context,
-     minimum PII), 9 Webhooks/tokens/links, 10 Rate limiting and cost, 11 Audit and logging,
-     12 Verification (Brakeman, bundler-audit, features/security/ scenarios). See
-     docs/security/security_review_2026_10.md "Recurring root causes". -->
+<!-- CORE — never omitted, never "N/A" as a whole. All 24 rows; an item that genuinely does not apply
+     says why in one line ("N/A — no uploads"), never blank. Every new action, job, policy, upload,
+     import, AI call, token, email, webhook, stored path, PII column and privileged action appears.
+     Each item's rule, a bad → good example and its check: docs/security/feature_security_checklist.md
+     (items 1–12 from the October 2026 review, 13–24 from the November 2026 OWASP review). -->
 
 | # | Item | How this design meets it | Where | Test |
 |---|---|---|---|---|
-| 1 | Authorization | | | |
+| 1 | Authorization (Pundit) | | | |
+| 2 | Tenant isolation | | | |
+| 3 | Mass assignment | | | |
+| 4 | No code from data | | | |
+| 5 | Injection | | | |
+| 6 | Background jobs | | | |
+| 7 | Files and documents | | | |
+| 8 | AI / LLM | | | |
+| 9 | Webhooks, tokens, links | | | |
+| 10 | Rate limiting and cost | | | |
+| 11 | Audit and logging | | | |
+| 12 | Verification (Brakeman, bundler-audit, features/security/) | | | |
+| 13 | Stored paths and merge fields | | | |
+| 14 | File names from data | | | |
+| 15 | Hosts and URLs | | | |
+| 16 | Enforce at the endpoint, not the button | | | |
+| 17 | Impersonation (support signed in as a client) | | | |
+| 18 | Second person on money | | | |
+| 19 | Verification flags | | | |
+| 20 | Security events | | | |
+| 21 | PII and secrets | | | |
+| 22 | Emails that carry access | | | |
+| 23 | Front end | | | |
+| 24 | Inbound and switch-on | | | |
 
 ### Worked examples
 
@@ -499,6 +518,20 @@ erDiagram
 | # | Open question | Current thinking | Status |
 |---|---|---|---|
 | 1 | <!-- --> | <!-- --> | <!-- Deferred --> |
+
+### Post-deploy steps
+
+<!-- CORE — never omitted. Every manual thing someone must do after the release reaches an environment:
+     env flags to switch on, rake tasks (dry run, then EXECUTE=1), users or firms to message, per-firm
+     switches for CS, QA checklists, checks that can only be done later. Environment is one of all,
+     production (each region answers it separately), staging_in, production_in, production_us — IN and
+     US never share values. A change with nothing to do writes one line: "None — <reason>".
+     The last phase of tasks.md copies this into post_deploy_steps/<change-name>.md
+     (format: post_deploy_steps/README.md); every deploy then asks the deployer to answer each step. -->
+
+| Step id | Environment | What to do (exact command) | Why | Done when |
+|---|---|---|---|---|
+| <!-- enforce-flag --> | <!-- production --> | <!-- set FOO_ENFORCE=1 in the region's env file, restart --> | <!-- the check only logs until then --> | <!-- flag set, restart done --> |
 
 **FAQ**
 
