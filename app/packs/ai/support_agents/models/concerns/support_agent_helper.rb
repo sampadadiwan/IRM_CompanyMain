@@ -10,6 +10,7 @@ module SupportAgentHelper
   # @return [void]
   def check_field_to_document_consistency(ctx, model)
     mappings = parse_field_document_mappings
+    Rails.logger.debug { "[SupportAgent] Parsed field-document mappings: #{mappings.inspect}" }
 
     llm = ctx[:llm]
     return if mappings.blank?
@@ -27,19 +28,27 @@ module SupportAgentHelper
       next unless extracted
 
       invalid_count = compare_extracted_with_model(ctx, doc, model, extracted, field_map)
-      ctx[:issues][:document_issues] << { type: :info, name: doc.name, message: "All fields match for #{doc.name}", severity: :success } if invalid_count.zero?
+      ctx[:issues][:document_issues] << { type: :info, name: doc.name, message: "All fields match for #{doc.name}", severity: :success, step: :consistency } if invalid_count.zero?
     end
   end
 
   # Builds a mapping of model field names to document extraction prompts.
-  # Each field is defined under custom fields with meta_data = 'doc_extraction'.
+  # Supports two config formats:
+  #   1. New structured JSON in json_fields["doc_verification_rules"] (from setup table UI)
+  #   2. Old text format on FormCustomField records with meta_data = 'doc_extraction'
+  # New format is checked first; falls back to old format for backward compatibility.
   #
   #     {
-  #       "Document Label" => { "json_field" => "Prompt string", ... }
+  #       "Document Label" => { "target_field" => "extraction_prompt", ... }
   #     }
   #
   # @return [Hash{String => Hash{String => String}}]
   def parse_field_document_mappings
+    # New structured format from the setup table UI takes precedence
+    rules = json_fields["doc_verification_rules"]
+    return parse_new_format_mappings(rules) if rules.is_a?(Hash) && rules.values.any? { |v| v.is_a?(Array) && v.present? }
+
+    # Fall back to old text-based format (FormCustomField meta_data = 'doc_extraction')
     doc_extraction_fields = form_custom_fields.where(meta_data: 'doc_extraction')
     document_field_map = {}
 
@@ -50,6 +59,36 @@ module SupportAgentHelper
 
       # Each extraction mapping is stored as a semicolon-separated list of "json_key=prompt"
       document_field_map[field.label] = field_mappings.split(";").to_h { |f| f.split("=") }
+    end
+
+    document_field_map
+  end
+
+  private
+
+  # Parses the new structured JSON format from the setup table UI.
+  # Reads json_fields["doc_verification_rules"] keyed by form_type_id,
+  # merges all form types into one flat hash matching the old format shape.
+  # Skips rules with blank doc_label or target_field.
+  #
+  # @param rules [Hash] the doc_verification_rules hash keyed by form_type_id
+  # @return [Hash{String => Hash{String => String}}] same shape as old format:
+  #   { "Upload PAN" => { "PAN" => "PAN / Tax ID number" } }
+  def parse_new_format_mappings(rules)
+    document_field_map = {}
+
+    rules.each_value do |entries|
+      next unless entries.is_a?(Array)
+
+      entries.each do |entry|
+        doc_label    = entry["doc_label"].to_s.strip
+        prompt       = entry["prompt"].to_s.strip
+        target_field = entry["target_field"].to_s.strip
+        next if doc_label.blank? || target_field.blank?
+
+        document_field_map[doc_label] ||= {}
+        document_field_map[doc_label][target_field] = prompt
+      end
     end
 
     document_field_map
@@ -110,7 +149,8 @@ module SupportAgentHelper
 
     field_map.each_key do |attribute_name|
       extracted_val = extracted[attribute_name]
-      model_val = model[attribute_name]
+      # DB column first; fall back to json_fields for custom form fields
+      model_val = model[attribute_name] || model.try(:json_fields)&.dig(attribute_name)
 
       # Perform type-specific comparisons to reduce false mismatches.
       matched = case model_val
@@ -137,6 +177,7 @@ module SupportAgentHelper
           type: :field_mismatch,
           name: doc.name,
           severity: :blocking,
+          step: :consistency,
           message: "#{doc.name}, #{attribute_name} (#{extracted_val}) does not match #{model.class.name} (#{model_val})"
         }
         Rails.logger.debug { "[SupportAgent] Field mismatch in #{doc.name}: #{attribute_name}=#{extracted_val.inspect}, expected #{attribute_name}=#{model_val.inspect}" }

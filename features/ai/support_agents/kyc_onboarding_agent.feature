@@ -23,6 +23,7 @@ Feature: KYC Onboarding Agent
 
   Scenario: All checks pass and AML is triggered
     Given the KYC onboarding agent is fully enabled
+    And AML is enabled for the entity
     And the KYC has an uploaded document labeled "Passport"
     When I run the KYC onboarding agent
     Then the report final status should be "ready"
@@ -51,13 +52,13 @@ Feature: KYC Onboarding Agent
   # resolve as a filesystem path in test; the LLM receives only the text prompt.
   # We stub the LLM response to exercise the mismatch-handling code path.
 
-  Scenario: LLM reports mismatch for a document and blocks AML
+  Scenario: LLM reports mismatch for a PAN document and blocks AML
     Given the KYC onboarding agent is fully enabled
-    And the KYC has an uploaded document labeled "Bank Statement"
+    And the KYC has an uploaded document labeled "PAN Card"
     And the LLM will flag the document as not matching its label
     When I run the KYC onboarding agent
     Then the report final status should be "blocked"
-    And the report should have a blocking document issue mentioning "Bank Statement"
+    And the report should have a blocking document issue mentioning "PAN Card"
     And the AML job should not have been enqueued for the investor KYC
 
   # ── Expiry checks ────────────────────────────────────────────────────────
@@ -142,6 +143,7 @@ Feature: KYC Onboarding Agent
 
   Scenario: All validation flags disabled — pipeline completes and AML is triggered
     Given the KYC onboarding agent has all validation flags disabled
+    And AML is enabled for the entity
     When I run the KYC onboarding agent
     Then the report final status should be "ready"
     And the AML job should have been enqueued for the investor KYC
@@ -158,6 +160,7 @@ Feature: KYC Onboarding Agent
 
   Scenario: Entity with no active employees — AML is skipped gracefully without crashing
     Given the KYC onboarding agent is fully enabled
+    And AML is enabled for the entity
     And the KYC has an uploaded document labeled "Passport"
     And the entity has no active employees
     When I run the KYC onboarding agent

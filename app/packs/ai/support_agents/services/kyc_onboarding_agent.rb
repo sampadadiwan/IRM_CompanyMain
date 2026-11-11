@@ -7,7 +7,7 @@ class KycOnboardingAgent < SupportAgentService
 
     Steps:
     • Field Completeness — checks that all mandatory fields (defined in FormCustomField) are populated.
-    • Document Presence — verifies required document types (passport, ID, etc.) have been uploaded.
+    • Document Presence — verifies required document types (Tax ID, Address Proof, Bank Details) have been uploaded.
     • Document Validity — validates document content and labels against expected criteria.
     • Field-to-Document Consistency — ensures field values match the uploaded document data.
     • Expiry Status — flags documents approaching or past their expiry date.
@@ -63,7 +63,7 @@ class KycOnboardingAgent < SupportAgentService
   # == Inputs ==
   # - InvestorKyc record
   # - FormCustomField (mandatory/optional rules)
-  # - Uploaded documents (passport, ID, etc.)
+  # - Uploaded documents (Tax ID, Address Proof, Bank Details)
   # - Document-to-field mapping
   # - Ad-hoc check prompts
   # - Reminder configuration
@@ -91,9 +91,11 @@ class KycOnboardingAgent < SupportAgentService
   # - AML checks auto-triggered on completion
 
   def targets(entity_id)
-    # Include :entity to avoid an N+1 query when trigger_aml_if_complete
-    # resolves entity.employees.active.first for each KYC record.
-    InvestorKyc.completed.where(entity_id: entity_id).includes(:documents, :investor, :entity)
+    # Include entity: :entity_setting to avoid N+1 queries when
+    # trigger_aml_if_complete checks entity.entity_setting.aml_enabled
+    # and entity.employees.active.first for each KYC record.
+    # Only completed KYCs — verified ones are already reviewed and don't need agent runs
+    InvestorKyc.where(entity_id: entity_id, submission_status: "completed").includes(:documents, :investor, entity: :entity_setting)
   end
 
   # Human descriptions of the steps each json_fields toggle gates.
@@ -120,6 +122,11 @@ class KycOnboardingAgent < SupportAgentService
 
     issues
   end
+
+  # Normalized name patterns that identify PAN or Tax ID documents.
+  # Used by pan_or_tax_id_document? to filter which documents get
+  # AI label validation (product decision: only PAN/Tax ID for now).
+  PAN_TAX_ID_PATTERNS = (%w[pan tax_id taxid] + ["tax id"]).freeze
 
   private
 
@@ -196,11 +203,11 @@ class KycOnboardingAgent < SupportAgentService
       next unless str_val.empty? || invalid_tokens.include?(str_val.downcase)
 
       Rails.logger.debug { "[KycOnboardingAgent] Invalid required field detected: #{attr}=#{value.inspect}" }
-      ctx[:issues][:field_issues] << { type: :invalid_field_value, message: attr, value: value, severity: :blocking }
+      ctx[:issues][:field_issues] << { type: :invalid_field_value, message: attr, value: value, severity: :blocking, step: :field_completeness }
       invalid_count += 1
     end
 
-    ctx[:issues][:field_issues] << { type: :info, message: "All required attributes are valid", severity: :success } if invalid_count.zero?
+    ctx[:issues][:field_issues] << { type: :info, message: "All required fields are filled", severity: :success, step: :field_completeness } if invalid_count.zero?
 
     true
   end
@@ -220,18 +227,18 @@ class KycOnboardingAgent < SupportAgentService
       elsif fcf.field_type == "Select"
         options = fcf.meta_data.split(",").map(&:strip).compact_blank
         unless options.include?(str_val) || str_val.empty?
-          ctx[:issues][:field_issues] << { type: :invalid, message: fcf.name, value: value, severity: :blocking }
+          ctx[:issues][:field_issues] << { type: :invalid, message: fcf.name, value: value, severity: :blocking, step: :field_completeness }
           Rails.logger.debug { "[KycOnboardingAgent] Invalid select field value for #{fcf.name}: #{value.inspect}" }
           invalid_count += 1
         end
       elsif str_val.empty? || invalid_tokens.include?(str_val.downcase)
-        ctx[:issues][:field_issues] << { type: :invalid, message: fcf.name, value: value, severity: :blocking }
+        ctx[:issues][:field_issues] << { type: :invalid, message: fcf.name, value: value, severity: :blocking, step: :field_completeness }
         Rails.logger.debug { "[KycOnboardingAgent] Invalid JSON field detected: #{fcf.name}=#{value.inspect}" }
         invalid_count += 1
       end
     end
 
-    ctx[:issues][:field_issues] << { type: :info, message: "All required custom fields are valid", severity: :success } if invalid_count.zero?
+    ctx[:issues][:field_issues] << { type: :info, message: "All custom fields are filled", severity: :success, step: :field_completeness } if invalid_count.zero?
   end
 
   # Verifies all required documents (from form fields and support_agent config)
@@ -244,7 +251,9 @@ class KycOnboardingAgent < SupportAgentService
     true
   end
 
-  # Uses LLM to validate each uploaded document against its label.
+  # Uses LLM to validate PAN/Tax ID documents against their labels.
+  # Non-PAN/Tax ID documents are skipped (product decision: reduces
+  # AI cost and avoids false positives on ambiguous document types).
   # Records mismatched or unparsable responses as issues.
   # Returns true in all branches so Trailblazer continues to the next step.
   def check_document_validity(ctx, investor_kyc:, **)
@@ -255,6 +264,10 @@ class KycOnboardingAgent < SupportAgentService
       llm = ctx[:llm]
 
       investor_kyc.documents.each do |doc|
+        unless pan_or_tax_id_document?(doc)
+          Rails.logger.debug { "[KycOnboardingAgent] Skipping document validity for non-PAN/Tax ID document: #{doc.name}" }
+          next
+        end
         Rails.logger.debug { "[KycOnboardingAgent] Starting document #{doc.name} consistency check for InvestorKyc ID=#{investor_kyc.id}" }
 
         label = doc.name
@@ -276,24 +289,24 @@ class KycOnboardingAgent < SupportAgentService
           content = content.sub(/\A```(?:json)?/i, "").sub(/```$/, "").strip
           result = JSON.parse(content)
           if result["matches"]
-            ctx[:issues][:document_issues] << { type: :info, name: doc.name, message: "Valid #{label}", severity: :success }
+            ctx[:issues][:document_issues] << { type: :info, name: doc.name, message: "Valid #{label}", severity: :success, step: :document_validity }
             Rails.logger.debug { "[KycOnboardingAgent] Document validated successfully: #{label}" }
           else
-            ctx[:issues][:document_issues] << { type: :mismatched_document, name: doc.name, message: "Invalid #{label}", severity: :blocking, explanation: result["explanation"] }
+            ctx[:issues][:document_issues] << { type: :mismatched_document, name: doc.name, message: "Invalid #{label}", severity: :blocking, explanation: result["explanation"], step: :document_validity }
             Rails.logger.debug { "[KycOnboardingAgent] Document mismatch detected: #{label}, explanation=#{result['explanation']}" }
           end
         rescue JSON::ParserError
-          ctx[:issues][:document_issues] << { type: :llm_parse_error, name: doc.name, message: "Could not ascertain #{label}", severity: :warning, raw: raw }
+          ctx[:issues][:document_issues] << { type: :llm_parse_error, name: doc.name, message: "Could not ascertain #{label}", severity: :warning, raw: raw, step: :document_validity }
           Rails.logger.warn("[KycOnboardingAgent] LLM parse error for document #{label}, raw=#{raw.inspect}")
         rescue Faraday::ResourceNotFound, Faraday::Error => e
-          ctx[:issues][:document_issues] << { type: :document_unavailable, name: doc.name, message: "Document file not accessible (#{e.class})", severity: :warning }
+          ctx[:issues][:document_issues] << { type: :document_unavailable, name: doc.name, message: "Document file not accessible (#{e.class})", severity: :warning, step: :document_validity }
           Rails.logger.warn("[KycOnboardingAgent] Document file unavailable for #{label}: #{e.message.lines.first.chomp}")
         rescue Errno::ENOENT => e
           # doc.file.url returns a web-relative path (/uploads/...) in local/test storage.
           # RubyLLM treats it as an absolute filesystem path and raises ENOENT when the
           # file doesn't exist there (the file lives at Rails.root/public/uploads/...).
           # Log a warning and skip validity checking rather than crashing the pipeline.
-          ctx[:issues][:document_issues] << { type: :document_unavailable, name: doc.name, message: "Document file not accessible locally (#{e.class})", severity: :warning }
+          ctx[:issues][:document_issues] << { type: :document_unavailable, name: doc.name, message: "Document file not accessible locally (#{e.class})", severity: :warning, step: :document_validity }
           Rails.logger.warn("[KycOnboardingAgent] Document file not found on filesystem for #{label}: #{e.message.lines.first.chomp}")
         end
       end
@@ -363,7 +376,7 @@ class KycOnboardingAgent < SupportAgentService
     expiry_date = investor_kyc.expiry_date
 
     if expiry_date.nil?
-      ctx[:issues][:field_issues] << { type: :info, message: "No expiry date set", severity: :success }
+      ctx[:issues][:field_issues] << { type: :info, message: "No expiry date set", severity: :success, step: :expiry_status }
       mark_step_success(report, :check_expiry_status, message: "No expiry date set") if report
       return true
     end
@@ -378,7 +391,8 @@ class KycOnboardingAgent < SupportAgentService
       ctx[:issues][:field_issues] << {
         type: :kyc_expired,
         message: "KYC expired on #{expiry_date}",
-        severity: :blocking
+        severity: :blocking,
+        step: :expiry_status
       }
       Rails.logger.warn { "[KycOnboardingAgent] KYC expired for InvestorKyc ID=#{investor_kyc.id}" }
       # "Check complete" prefix — the STEP succeeded (it ran and found the problem);
@@ -389,6 +403,7 @@ class KycOnboardingAgent < SupportAgentService
         type: :kyc_expiring_soon,
         message: "KYC expires in #{days_remaining} day(s) on #{expiry_date}",
         severity: :warning,
+        step: :expiry_status,
         # days_remaining lets send_reminders compute the reminder milestone band
         # without re-deriving dates from the message string
         days_remaining: days_remaining
@@ -399,7 +414,8 @@ class KycOnboardingAgent < SupportAgentService
       ctx[:issues][:field_issues] << {
         type: :info,
         message: "KYC valid until #{expiry_date} (#{days_remaining} days remaining)",
-        severity: :success
+        severity: :success,
+        step: :expiry_status
       }
       mark_step_success(report, :check_expiry_status, message: "Valid until #{expiry_date}") if report
     end
@@ -520,9 +536,19 @@ class KycOnboardingAgent < SupportAgentService
     report = ctx[:support_agent_report]
     mark_step_running(report, :trigger_aml_if_complete) if report
 
+    Rails.logger.debug { "[KycOnboardingAgent] AML decision inputs — agent toggle trigger_aml=#{support_agent.json_fields['trigger_aml'].inspect}, entity_setting.aml_enabled=#{investor_kyc.entity&.entity_setting&.aml_enabled.inspect}" }
+
     unless enabled?("trigger_aml")
       Rails.logger.debug { "[KycOnboardingAgent] AML triggering is disabled, skipping." }
       mark_step_skipped(report, :trigger_aml_if_complete, message: "Disabled") if report
+      return true
+    end
+
+    # Guard: entity must have AML enabled (charged separately per entity).
+    # Uses safe navigation because entity_setting may not exist for older entities.
+    unless investor_kyc.entity&.entity_setting&.aml_enabled
+      Rails.logger.debug { "[KycOnboardingAgent] AML not enabled for entity ID=#{investor_kyc.entity_id}, skipping AML trigger" }
+      mark_step_skipped(report, :trigger_aml_if_complete, message: "AML not enabled for entity") if report
       return true
     end
 
@@ -555,5 +581,18 @@ class KycOnboardingAgent < SupportAgentService
     end
 
     true
+  end
+
+  # Checks whether a document is a PAN or Tax ID type by normalizing
+  # the name (stripping common upload prefixes) and matching against
+  # known patterns. Used to filter which documents get AI label validation.
+  #
+  # @param doc [Document] the document record to check
+  # @return [Boolean] true if the document is a PAN or Tax ID type
+  def pan_or_tax_id_document?(doc)
+    normalized = doc.name.to_s
+                    .sub(/\A(Upload|Attach your|Attach)\s*/i, "")
+                    .downcase.strip
+    PAN_TAX_ID_PATTERNS.any? { |pattern| normalized.include?(pattern) }
   end
 end
