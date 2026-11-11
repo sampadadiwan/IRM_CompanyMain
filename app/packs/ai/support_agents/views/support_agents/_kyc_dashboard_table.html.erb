@@ -1,0 +1,205 @@
+<%# KYC Dashboard table — filterable, paginated table of completed KYCs with
+    status badges, document upload ratios (with hover tooltip showing names),
+    result summaries, and inline actions. Agent document validation details
+    are in the inline detail panel's Documents tab.
+    Rendered inside <turbo-frame id="kyc-dashboard-table">.
+    Locals: support_agent (SupportAgent), records (Array<InvestorKyc>),
+            pagy (Pagy or nil), doc_ratios (Hash) %>
+
+<%# Filter form — submits to the same page, targeting the Turbo Frame %>
+<div class="card shadow-sm mb-3">
+  <div class="card-body py-2">
+    <%= form_tag support_agent_path(support_agent), method: :get, data: { turbo_frame: "kyc-dashboard-table" }, class: "row g-2 align-items-end" do %>
+
+      <%# Search %>
+      <div class="col-md-3">
+        <label class="form-label small mb-0">Search</label>
+        <%= text_field_tag :q, params[:q], class: "form-control form-control-sm",
+              placeholder: "Name, PAN..." %>
+      </div>
+
+      <%# KYC Type %>
+      <div class="col-md-2">
+        <label class="form-label small mb-0">KYC Type</label>
+        <%= select_tag :kyc_type,
+              options_for_select([["All", ""], ["Individual", "IndividualKyc"], ["Non-Individual", "NonIndividualKyc"]], params[:kyc_type]),
+              class: "form-select form-select-sm" %>
+      </div>
+
+      <%# Status %>
+      <div class="col-md-2">
+        <label class="form-label small mb-0">Status</label>
+        <%= select_tag :status,
+              options_for_select([["All", ""], ["Pending", "pending"], ["Successful", "successful"],
+                                  ["Failed", "failed"], ["Partially Failed", "partial"], ["Expired", "expired"]], params[:status]),
+              class: "form-select form-select-sm" %>
+      </div>
+
+      <%# Date range %>
+      <div class="col-md-2">
+        <label class="form-label small mb-0">Submitted From</label>
+        <%= date_field_tag :date_from, params[:date_from], class: "form-control form-control-sm" %>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small mb-0">Submitted To</label>
+        <%= date_field_tag :date_to, params[:date_to], class: "form-control form-control-sm" %>
+      </div>
+
+      <%# Actions %>
+      <div class="col-md-1 d-flex gap-1">
+        <%= submit_tag "Filter", class: "btn btn-sm btn-primary" %>
+        <%= link_to "Clear", support_agent_path(support_agent, tab: "kyc_dashboard"),
+              class: "btn btn-sm btn-outline-secondary", data: { turbo_frame: "kyc-dashboard-table" } %>
+      </div>
+
+      <%# Preserve active stat card filter if present %>
+      <% if params[:status].present? && params[:tab].blank? %>
+        <%= hidden_field_tag :tab, "kyc_dashboard" %>
+      <% end %>
+    <% end %>
+  </div>
+</div>
+
+<%# Table %>
+<div class="table-responsive">
+  <table class="table table-hover table-sm align-middle">
+    <thead class="table-light">
+      <tr>
+        <th>KYC Name</th>
+        <th>KYC Type</th>
+        <th>Submitted On</th>
+        <th>Status</th>
+        <th>Docs</th>
+        <th>Agent Run On</th>
+        <th>Result Summary</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if records.any? %>
+        <% records.each do |kyc| %>
+          <% report = kyc.support_agent_report %>
+          <% status = kyc_agent_status(kyc, report) %>
+          <tr data-kyc-id="<%= kyc.id %>">
+            <%# KYC Name — hyperlinked to KYC detail page (replaced ID column per product feedback) %>
+            <td><%= link_to (kyc.full_name.presence || kyc.investor&.investor_name || "—"), investor_kyc_path(kyc), data: { turbo: false } %></td>
+            <td><%= kyc.type == "IndividualKyc" ? "Individual" : "Non-Individual" %></td>
+            <td>
+              <% if kyc.created_at %>
+                <%= l(kyc.created_at, format: :short) %>
+                <br><span class="text-muted" style="font-size: 11px;"><%= kyc.created_at.strftime("%I:%M %p") %></span>
+              <% else %>
+                —
+              <% end %>
+            </td>
+            <td>
+              <% badge_class = case status
+                               when "Successful"       then "bg-success"
+                               when "Failed"           then "bg-danger"
+                               when "Partially Failed" then "bg-warning text-dark"
+                               when "Expired"          then "bg-dark"
+                               else "bg-secondary"
+                               end %>
+              <span class="badge <%= badge_class %>"><%= status %></span>
+              <% if kyc.submission_verified? && status == "Successful" %>
+                <br><span class="badge bg-outline-success border border-success text-success" style="font-size: 10px;"><i class="ti ti-circle-check me-1"></i>Verified</span>
+              <% end %>
+            </td>
+            <%# Docs — uploaded / required count with Bootstrap tooltip showing doc names.
+                Agent validation details are in the detail panel's Documents tab. %>
+            <% ratio = doc_ratios[kyc.id] %>
+            <td>
+              <% if ratio && ratio[:required].to_i > 0 %>
+                <span class="<%= kyc_doc_ratio_color(ratio[:uploaded], ratio[:required]) %>"
+                      data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="right"
+                      data-bs-custom-class="kyc-doc-tooltip"
+                      data-bs-title="<%= kyc_doc_tooltip_html(ratio) %>"
+                      style="cursor: help; text-decoration: underline dotted;">
+                  <%= kyc_doc_ratio(kyc, doc_ratios) %>
+                </span>
+              <% else %>
+                <span class="text-muted">—</span>
+              <% end %>
+            </td>
+            <%# Agent Run On — use run_at from json_fields (updated each run),
+                not created_at (stays as original report creation date). %>
+            <% run_at_raw = report&.json_fields&.dig("run_at") %>
+            <td>
+              <% if run_at_raw %>
+                <% run_at = Time.zone.parse(run_at_raw) %>
+                <%= l(run_at, format: :short) %>
+                <br><span class="text-muted" style="font-size: 11px;"><%= run_at.strftime("%I:%M %p") %></span>
+              <% else %>
+                —
+              <% end %>
+            </td>
+            <td><%= kyc_result_summary(report) %></td>
+            <td class="text-nowrap">
+              <%# Eye icon — view run output detail inline below this row %>
+              <% if report.present? %>
+                <%= link_to kyc_run_output_support_agent_path(support_agent, report_id: report.id),
+                      data: { turbo_frame: "kyc_run_output_#{kyc.id}" },
+                      class: "btn btn-sm btn-outline-secondary", title: "View Details" do %>
+                  <i class="ti ti-eye"></i>
+                <% end %>
+              <% else %>
+                <button class="btn btn-sm btn-outline-secondary" disabled title="No report yet">
+                  <i class="ti ti-eye"></i>
+                </button>
+              <% end %>
+
+              <%# Play icon — re-run agent on this KYC. turbo_stream updates
+                  #kyc_single_progress_panel (above the table) with the step-circle UI.
+                  kyc-rerun-disable controller disables button during agent run. %>
+              <%= button_to run_with_steps_support_agent_path(support_agent),
+                    method: :post,
+                    params: { target_type: "InvestorKyc", target_id: kyc.id,
+                              progress_panel_id: "kyc_single_progress_panel" },
+                    form: { data: { controller: "kyc-rerun-disable",
+                                    action: "turbo:submit-end->kyc-rerun-disable#disable",
+                                    turbo_confirm: "Re-run the KYC validation agent for this investor?" } },
+                    form_class: "d-inline", class: "btn btn-sm btn-outline-primary",
+                    title: "Re-run Agent" do %>
+                <i class="ti ti-player-play"></i>
+              <% end %>
+
+              <%# Check icon — mark verified (PUT route, HTML format redirects to KYC page) %>
+              <% if show_mark_verified?(kyc, report) %>
+                <%= button_to toggle_verified_investor_kyc_path(kyc),
+                      method: :put,
+                      form_class: "d-inline", class: "btn btn-sm btn-outline-success",
+                      title: "Mark Verified", data: { turbo: false } do %>
+                  <i class="ti ti-check"></i>
+                <% end %>
+              <% end %>
+            </td>
+          </tr>
+          <%# Inline detail row — hidden until eye icon is clicked. Turbo Frame
+              loads the run output panel into this row's colspan cell. %>
+          <tr class="kyc-detail-row d-none" data-kyc-detail-for="<%= kyc.id %>">
+            <td colspan="8" class="p-0 border-0">
+              <turbo-frame id="kyc_run_output_<%= kyc.id %>"></turbo-frame>
+            </td>
+          </tr>
+        <% end %>
+      <% else %>
+        <tr>
+          <td colspan="8" class="text-center text-muted py-4">
+            <i class="ti ti-clipboard-off me-1"></i>
+            No KYC submissions found.
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<%# Pagination %>
+<% if pagy && pagy.pages > 1 %>
+  <nav class="d-flex justify-content-center">
+    <%= raw pagy_bootstrap_nav(pagy, anchor_string: %(data-turbo-frame="kyc-dashboard-table")) %>
+  </nav>
+<% end %>
+
+<%# Run output detail panels are inline — each KYC row has a hidden sibling <tr>
+    with a per-KYC turbo frame that loads the panel on eye-icon click. %>

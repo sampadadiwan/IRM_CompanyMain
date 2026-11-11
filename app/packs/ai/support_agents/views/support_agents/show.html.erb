@@ -61,6 +61,11 @@
           Obligation Matrix
         </a>
       <% end %>
+      <% if @support_agent.agent_type == "KycOnboardingAgent" %>
+        <a class="nav-link <%= 'active' if active_tab == 'kyc_dashboard' %>" data-bs-toggle="pill" href="#kyc-dashboard-tab">
+          KYC Dashboard
+        </a>
+      <% end %>
 
     </nav>
 
@@ -148,6 +153,13 @@
             </div>
           <% end %>
           <%= render 'deal_reports_tab', support_agent: @support_agent, deal_reports: @deal_reports, pagy: @pagy_deal_reports %>
+        </div>
+      <% end %>
+
+      <% if @support_agent.agent_type == "KycOnboardingAgent" %>
+        <%# KYC Dashboard Tab — aggregate view of KYC validation results %>
+        <div id="kyc-dashboard-tab" class="tab-pane fade in <%= 'show active' if active_tab == 'kyc_dashboard' %>">
+          <%= render 'kyc_dashboard_tab', support_agent: @support_agent, kyc_dashboard: @kyc_dashboard %>
         </div>
       <% end %>
 

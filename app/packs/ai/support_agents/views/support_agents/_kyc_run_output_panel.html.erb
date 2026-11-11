@@ -1,0 +1,148 @@
+<%# KYC run output detail panel — inline expand below the KYC table row showing
+    item-wise validation results from a SupportAgentReport. Rendered inside a
+    per-KYC <turbo-frame id="kyc_run_output_<kyc_id>"> in a hidden detail <tr>.
+    The kyc-run-output Stimulus controller shows the parent row on connect and
+    hides it on close.
+    Locals: report (SupportAgentReport) %>
+<turbo-frame id="kyc_run_output_<%= report.owner_id %>">
+  <% items = kyc_run_output_items(report) %>
+  <% counts = kyc_run_output_counts(items) %>
+
+  <style>
+    .kyc-run-step [data-bs-toggle="collapse"] .ti-chevron-right {
+      transition: transform 0.2s ease;
+    }
+    .kyc-run-step [data-bs-toggle="collapse"][aria-expanded="true"] .ti-chevron-right {
+      transform: rotate(90deg);
+    }
+    .kyc-run-step .table tbody tr:nth-child(even) {
+      background-color: #f8f9fa;
+    }
+    .kyc-run-step .table tbody tr:hover {
+      background-color: #f0f4ff;
+    }
+  </style>
+
+  <div data-controller="kyc-run-output"
+       data-kyc-run-output-kyc-id-value="<%= report.owner_id %>"
+       class="bg-white border rounded shadow-sm m-2">
+
+    <%# Header %>
+    <div class="px-3 py-2 border-bottom" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <h6 class="mb-0 fw-bold" style="font-size: 0.95rem;">KYC Run Output</h6>
+          <div class="text-muted mt-1" style="font-size: 0.8rem;">
+            KYC ID: <strong><%= report.owner_id %></strong>
+            <% if report.owner.respond_to?(:investor) && report.owner.investor %>
+              <span class="mx-1">·</span>
+              KYC Name: <strong><%= report.owner.full_name.presence || report.owner.investor&.investor_name || "—" %></strong>
+            <% end %>
+            <span class="mx-1">·</span>
+            Run On: <strong><%= report.created_at ? l(report.created_at, format: :short) : "—" %></strong>
+          </div>
+        </div>
+        <button class="btn btn-sm btn-outline-secondary border-0" data-action="kyc-run-output#close" title="Close">
+          <i class="ti ti-x fs-5"></i>
+        </button>
+      </div>
+    </div>
+
+    <%# Tab filters with counts %>
+    <div class="px-3 pt-2 pb-1 border-bottom bg-white">
+      <ul class="nav nav-pills nav-pills-sm gap-1 flex-wrap" role="tablist">
+        <% %w[all passed failed warning documents].each_with_index do |tab, i| %>
+          <li class="nav-item">
+            <a class="nav-link small py-1 px-2 <%= 'active' if i == 0 %>" href="#"
+               data-action="kyc-run-output#filterItems"
+               data-kyc-run-output-tab-param="<%= tab %>">
+              <%= tab.capitalize %> (<%= counts[tab] %>)
+            </a>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+
+    <%# Items grouped by pipeline step %>
+    <div class="px-3 py-2" data-kyc-run-output-target="itemsBody">
+      <% groups = kyc_run_output_grouped(items) %>
+      <% if groups.any? %>
+        <% groups.each do |group| %>
+          <%
+            failed_count = group[:items].count { |i| i[:status] == "Failed" }
+            passed_count = group[:items].count { |i| i[:status] == "Passed" }
+            badge_class = if failed_count.positive?
+                            "bg-danger bg-opacity-10 text-danger"
+                          elsif passed_count == group[:items].size
+                            "bg-success bg-opacity-10 text-success"
+                          else
+                            "bg-secondary bg-opacity-10 text-secondary"
+                          end
+            # Color consistency: use #198754 (Bootstrap 5 success) to match stat card greens
+            border_color = failed_count.positive? ? "#dc354533" : (passed_count == group[:items].size ? "#19875433" : "#dee2e6")
+          %>
+          <div class="mb-2 rounded kyc-run-step" data-step="<%= group[:key] %>"
+               style="border: 1px solid <%= border_color %>; overflow: hidden;">
+            <%# Collapsible step header %>
+            <div class="px-3 py-2 d-flex align-items-center gap-2 cursor-pointer"
+                 style="background: #f8f9fa;"
+                 data-bs-toggle="collapse" data-bs-target="#step_<%= report.owner_id %>_<%= group[:key] %>"
+                 aria-expanded="false" role="button">
+              <i class="ti ti-chevron-right" style="font-size: 0.75rem; color: #6c757d;"></i>
+              <span class="fw-semibold" style="font-size: 0.8rem;"><%= group[:label] %></span>
+              <span class="badge rounded-pill ms-auto <%= badge_class %>" style="font-size: 0.7rem; font-weight: 600;">
+                <% if failed_count.positive? %>
+                  <%= failed_count %> failed
+                <% elsif passed_count == group[:items].size %>
+                  all passed
+                <% else %>
+                  <%= group[:items].size %> items
+                <% end %>
+              </span>
+            </div>
+            <div class="collapse" id="step_<%= report.owner_id %>_<%= group[:key] %>">
+              <table class="table table-sm align-middle mb-0" style="font-size: 0.8rem;">
+                <thead>
+                  <%# Color consistency: blue header with white text, matching stat card palette %>
+                  <tr style="background: #0d6efd;">
+                    <th class="text-uppercase fw-bold py-2 ps-3" style="font-size: 0.7rem; letter-spacing: 0.5px; width: 35%; color: #fff;">Item</th>
+                    <th class="text-uppercase fw-bold py-2" style="font-size: 0.7rem; letter-spacing: 0.5px; width: 45%; color: #fff;">Expected / Provided</th>
+                    <th class="text-uppercase fw-bold py-2" style="font-size: 0.7rem; letter-spacing: 0.5px; width: 20%; color: #fff;">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% group[:items].each do |item| %>
+                    <tr data-status="<%= item[:status].downcase %>" data-source="<%= item[:source] %>">
+                      <td class="ps-3 py-2" style="font-weight: 500;"><%= item[:item] %></td>
+                      <td class="py-2" style="color: #6c757d;"><%= item[:detail].presence || "—" %></td>
+                      <%# Badge colors match step header style (light bg + colored text) per product feedback %>
+                      <td class="py-2">
+                        <% badge_cls = case item[:status]
+                                       when "Passed"  then "bg-success bg-opacity-10 text-success"
+                                       when "Warning" then "bg-warning bg-opacity-10 text-warning"
+                                       else                "bg-danger bg-opacity-10 text-danger"
+                                       end %>
+                        <span class="badge rounded-pill <%= badge_cls %>" style="font-size: 0.7rem; font-weight: 600; padding: 4px 12px;">
+                          <%= item[:status] %>
+                        </span>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        <% end %>
+      <% else %>
+        <p class="text-muted text-center my-4">No items found in this report.</p>
+      <% end %>
+    </div>
+
+    <%# Footer %>
+    <div class="px-3 py-2 border-top bg-light text-end rounded-bottom">
+      <button class="btn btn-sm btn-outline-secondary" data-action="kyc-run-output#close">
+        Close
+      </button>
+    </div>
+  </div>
+</turbo-frame>

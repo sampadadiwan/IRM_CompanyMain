@@ -108,6 +108,30 @@ class SupportAgentsController < ApplicationController
     @deal_reports         = query.deal_reports
     @rta_reports          = query.rta_reports
     @side_letter_obligations = query.side_letter_obligations
+
+    # KYC Dashboard tab: load aggregate stats, charts, filtered table, and doc ratios.
+    # Only runs for KycOnboardingAgent — returns empty hash for other types.
+    @kyc_dashboard = query.kyc_dashboard_data(kyc_filter_params)
+  end
+
+  # Loads a single SupportAgentReport and renders the item-wise run output
+  # detail panel inside a Turbo Frame. Used by the KYC Dashboard eye icon.
+  # Verifies the report belongs to this agent to prevent cross-entity leakage.
+  #
+  # @return [void]
+  def kyc_run_output
+    @support_agent = SupportAgent.find(params[:id])
+    authorize @support_agent, :show?
+
+    @report = SupportAgentReport.find(params[:report_id])
+
+    # Verify report belongs to this agent (tenant isolation)
+    unless @report.support_agent_id == @support_agent.id
+      head :not_found
+      return
+    end
+
+    render partial: "support_agents/kyc_run_output_panel", locals: { report: @report }
   end
 
   # Initializes a new support agent for creation.
@@ -391,8 +415,11 @@ class SupportAgentsController < ApplicationController
       end
     end
 
-    # Enqueue the job with execution_mode = single_company_with_steps
-    SupportAgentJob.perform_later(
+    # Delay the job by 2 seconds so the browser has time to connect the
+    # ActionCable subscription (via <turbo-cable-stream-source>) before
+    # the job starts broadcasting step updates. Without this, back-to-back
+    # runs miss early broadcasts because the subscription isn't ready yet.
+    SupportAgentJob.set(wait: 2.seconds).perform_later(
       support_agent_id: @support_agent.id,
       target_id: params[:target_id],
       target_type: params[:target_type],
@@ -437,8 +464,16 @@ class SupportAgentsController < ApplicationController
     respond_to do |format|
       format.html { redirect_to(request.referer || support_agents_path, notice: "Support agent job has been queued.") }
       format.turbo_stream do
-        render turbo_stream: turbo_stream.replace(
-          "progress_panel_new",
+        # KYC dashboard passes progress_panel_id=kyc_single_progress_panel;
+        # other pages default to progress_panel_new.
+        panel_id = params[:progress_panel_id].presence || "progress_panel_new"
+        # KYC dashboard uses `update` (fills innerHTML) so the container div
+        # survives and can be reused for subsequent runs. Other pages use
+        # `replace` which swaps the entire element.
+        action = panel_id == "kyc_single_progress_panel" ? :update : :replace
+        render turbo_stream: turbo_stream.public_send(
+          action,
+          panel_id,
           partial: "support_agents/progress_panel",
           locals: { report: report, support_agent: @support_agent, target: target }
         )
@@ -534,10 +569,26 @@ class SupportAgentsController < ApplicationController
 
       format.turbo_stream do
         flash.now[:notice] = "Agent queued for #{target_ids.count} #{target_name.pluralize(target_ids.count)}. You'll receive a summary notification when complete."
-        render turbo_stream: turbo_stream.replace(
-          "page_alerts",
-          partial: "layouts/alerts"
-        )
+        # Render flash + initial batch progress panel so user sees immediate feedback.
+        # The panel target ID comes from the form (KYC dashboard uses its own panel ID).
+        panel_id = params[:progress_panel_id].presence || "batch_progress_panel"
+        render turbo_stream: [
+          turbo_stream.replace("page_alerts", partial: "layouts/alerts"),
+          turbo_stream.replace(
+            panel_id,
+            partial: "support_agents/batch_progress_panel",
+            locals: {
+              support_agent: @support_agent,
+              current: 0,
+              total: target_ids.count,
+              target_name: nil,
+              successes: 0,
+              errors: 0,
+              status: :queued,
+              panel_id: panel_id
+            }
+          )
+        ]
       end
     end
   end
@@ -743,6 +794,13 @@ class SupportAgentsController < ApplicationController
 
     permitted[:json_fields] = existing
     permitted
+  end
+
+  # Permits KYC dashboard filter params for table filtering and stat card clicks.
+  #
+  # @return [Hash] permitted filter params
+  def kyc_filter_params
+    params.permit(:status, :kyc_type, :q, :fund_id, :date_from, :date_to, :page).to_h.symbolize_keys
   end
 
   # Permits score fields submitted from the inline editor.

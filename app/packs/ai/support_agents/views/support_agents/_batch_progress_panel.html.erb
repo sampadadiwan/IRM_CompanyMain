@@ -1,10 +1,12 @@
 <%# Batch progress panel — replaced via Turbo Stream during batch runs.
-    Locals: support_agent, current, total, target_name, successes, errors, status %>
+    Locals: support_agent, current, total, target_name, successes, errors, status,
+            panel_id (optional, defaults to "batch_progress_panel") %>
 <% percent = total.to_i > 0 ? ((current.to_f / total) * 100).round : 0 %>
 <% is_complete = status.to_sym == :complete %>
 <% has_errors = errors.to_i > 0 %>
+<% panel_id = local_assigns.fetch(:panel_id, "batch_progress_panel") %>
 
-<div id="batch_progress_panel"
+<div id="<%= panel_id %>"
      class="card mb-3 mt-3 border"
      data-controller="batch-progress"
      data-batch-progress-support-agent-id-value="<%= support_agent.id %>"

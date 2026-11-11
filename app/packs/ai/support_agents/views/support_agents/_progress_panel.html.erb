@@ -10,7 +10,8 @@
      data-controller="support-agent-progress"
      data-support-agent-progress-report-id-value="<%= report&.id %>"
      data-support-agent-progress-support-agent-id-value="<%= support_agent&.id %>"
-     data-support-agent-progress-collapsed-value="<%= is_collapsed %>">
+     data-support-agent-progress-collapsed-value="<%= is_collapsed %>"
+     data-support-agent-progress-run-status-value="<%= is_running ? 'running' : 'done' %>">
 
   <%# Clickable Header - always visible %>
   <div class="card-header bg-light d-flex justify-content-between align-items-center py-2"

@@ -1,0 +1,66 @@
+<%# KYC Dashboard Tab — orchestrates basic stats, per-type stat columns with
+    charts, table, and bulk run button. Two-column layout splits agent validation
+    stats into Individual / Non-Individual side by side.
+    Locals: support_agent (SupportAgent), kyc_dashboard (Hash from AgentReportsQuery#kyc_dashboard_data) %>
+<% basic_stats = kyc_dashboard[:basic_stats] %>
+<% type_stats = kyc_dashboard[:type_stats] %>
+<% pending_ids = kyc_dashboard[:pending_ids] %>
+
+<div data-controller="kyc-dashboard-filter">
+  <%# Row 1 — Basic Metrics: submission pipeline (Not Sent → Verified) %>
+  <h6 class="text-muted text-uppercase small fw-semibold mb-1">KYC Form Status</h6>
+  <%= render 'kyc_dashboard_submission_stats', basic_stats: basic_stats %>
+
+  <%# Row 2 — Agent Metrics: validation status with bulk run button %>
+  <div class="d-flex align-items-center gap-3 mb-2">
+    <h6 class="text-muted text-uppercase small fw-semibold mb-0">Agent Metrics</h6>
+    <span class="text-muted small fst-italic">— KYCs with submitted status as complete are considered for agent run</span>
+    <%# Run Agent on All Pending — hidden form POSTs target_ids[] to run_batch %>
+    <% if pending_ids.any? %>
+      <%= form_tag run_batch_support_agent_path(support_agent),
+            method: :post,
+            data: {
+              turbo_confirm: "Run agent on #{pending_ids.size} pending KYC#{'s' if pending_ids.size > 1}?"
+            },
+            class: "d-inline" do %>
+        <%= hidden_field_tag :target_type, "InvestorKyc" %>
+        <%= hidden_field_tag :progress_panel_id, "kyc_batch_progress_panel" %>
+        <% pending_ids.each do |pid| %>
+          <%= hidden_field_tag "target_ids[]", pid %>
+        <% end %>
+        <button type="submit" class="btn btn-primary btn-sm">
+          <i class="ti ti-player-play me-1"></i> Run Agent on All Pending (<%= pending_ids.size %>)
+        </button>
+      <% end %>
+    <% else %>
+      <button class="btn btn-primary btn-sm" disabled>
+        <i class="ti ti-player-play me-1"></i> Run Agent on All Pending (0)
+      </button>
+    <% end %>
+  </div>
+
+  <%# Batch progress panel — initial render by run_batch, live updates via ActionCable %>
+  <div id="kyc_batch_progress_panel"></div>
+  <%= turbo_stream_from "batch_progress_#{support_agent.id}" %>
+
+  <%= render 'kyc_dashboard_type_columns',
+        type_stats: type_stats,
+        top_failures: kyc_dashboard[:top_failures],
+        support_agent: support_agent %>
+
+  <%# Single-KYC step progress panel — run_with_steps turbo_stream replaces this
+      div with _progress_panel.html.erb when the play icon is clicked. Placed
+      right above the table so the step-circle UI appears near the row. %>
+  <div id="kyc_single_progress_panel"></div>
+
+  <%# Table — detail panels are inline within the table rows (per-KYC turbo frames).
+      scoring-tooltips controller initializes Bootstrap tooltips for the Docs column
+      and re-scans after Turbo Frame reloads (pagination, filters). %>
+  <turbo-frame id="kyc-dashboard-table" data-controller="scoring-tooltips">
+    <%= render 'kyc_dashboard_table',
+          support_agent: support_agent,
+          records: kyc_dashboard[:records],
+          pagy: kyc_dashboard[:pagy],
+          doc_ratios: kyc_dashboard[:doc_ratios] %>
+  </turbo-frame>
+</div>

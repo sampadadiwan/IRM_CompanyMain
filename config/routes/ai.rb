@@ -20,6 +20,7 @@ resources :support_agents do
     get 'status'
     get 'step_details'
     get 'deal_steps'
+    get 'kyc_run_output'
   end
 
   # Agent Schedule routes
