@@ -1,0 +1,129 @@
+<%# KYC Dashboard charts — two half-donut charts (Individual / Non-Individual)
+    plus a top failure reasons panel with expandable investor drill-down.
+    Locals: chart_data (Hash with :individual, :non_individual),
+            top_failures (Array of { message:, count:, affected: [{ kyc_id:, kyc_name: }] }) %>
+<%
+  colors = { "Successful" => "#198754", "Failed" => "#dc3545",
+             "Partially Failed" => "#ffc107", "Expired" => "#6c757d" }
+%>
+
+<div class="row mb-4">
+  <%# Individual KYC Chart %>
+  <div class="col-md-4">
+    <div class="card shadow-sm">
+      <div class="card-header py-2"><strong>Individual KYCs</strong></div>
+      <div class="card-body text-center">
+        <% ind = chart_data[:individual] %>
+        <% ind_total = ind.values.sum %>
+        <% if ind_total > 0 %>
+          <div style="height: 160px; overflow: hidden;">
+            <div style="height: 320px;">
+              <%= pie_chart({
+                    "Successful"       => ind[:successful],
+                    "Failed"           => ind[:failed],
+                    "Partially Failed" => ind[:partial],
+                    "Expired"          => ind[:expired]
+                  }, donut: true, colors: colors.values,
+                     legend: false, library: { plugins: { legend: { display: false } } }) %>
+            </div>
+          </div>
+          <div class="d-flex justify-content-center gap-3 mt-2 small">
+            <% colors.each do |label, color| %>
+              <span><span style="color: <%= color %>;">&#9679;</span> <%= label %></span>
+            <% end %>
+          </div>
+        <% else %>
+          <p class="text-muted my-4">No Individual KYCs</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <%# Non-Individual KYC Chart %>
+  <div class="col-md-4">
+    <div class="card shadow-sm">
+      <div class="card-header py-2"><strong>Non-Individual KYCs</strong></div>
+      <div class="card-body text-center">
+        <% ni = chart_data[:non_individual] %>
+        <% ni_total = ni.values.sum %>
+        <% if ni_total > 0 %>
+          <div style="height: 160px; overflow: hidden;">
+            <div style="height: 320px;">
+              <%= pie_chart({
+                    "Successful"       => ni[:successful],
+                    "Failed"           => ni[:failed],
+                    "Partially Failed" => ni[:partial],
+                    "Expired"          => ni[:expired]
+                  }, donut: true, colors: colors.values,
+                     legend: false, library: { plugins: { legend: { display: false } } }) %>
+            </div>
+          </div>
+          <div class="d-flex justify-content-center gap-3 mt-2 small">
+            <% colors.each do |label, color| %>
+              <span><span style="color: <%= color %>;">&#9679;</span> <%= label %></span>
+            <% end %>
+          </div>
+        <% else %>
+          <p class="text-muted my-4">No Non-Individual KYCs</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <%# Top Failure Reasons %>
+  <div class="col-md-4">
+    <div class="card shadow-sm">
+      <div class="card-header py-2"><strong>Top Failure Reasons</strong></div>
+      <div class="card-body p-0">
+        <% if top_failures.any? %>
+          <table class="table table-sm table-hover mb-0">
+            <thead>
+              <tr class="small text-muted">
+                <th class="ps-3" style="width: 30px;">#</th>
+                <th>Failure Reason</th>
+                <th class="text-end pe-3" style="width: 50px;">Count</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% top_failures.each_with_index do |failure, idx| %>
+                <tr>
+                  <td colspan="3" class="p-0 border-0">
+                    <a href="#failure-detail-<%= idx %>"
+                       class="d-flex align-items-center text-decoration-none text-body px-3 py-2"
+                       style="cursor: pointer;"
+                       data-bs-toggle="collapse"
+                       role="button"
+                       aria-expanded="false"
+                       aria-controls="failure-detail-<%= idx %>">
+                      <span class="text-muted me-3" style="min-width: 16px;"><%= idx + 1 %>.</span>
+                      <span class="flex-grow-1"><%= failure[:message] %></span>
+                      <span class="badge rounded-pill bg-danger ms-2"><%= failure[:count] %></span>
+                      <i class="ti ti-chevron-down ms-2 text-muted" style="font-size: 14px; transition: transform 0.2s;"></i>
+                    </a>
+                    <div class="collapse" id="failure-detail-<%= idx %>">
+                      <div class="px-3 pb-3" style="padding-left: 2.5rem !important;">
+                        <div class="d-flex flex-wrap gap-1">
+                          <% failure[:affected].each do |inv| %>
+                            <%= link_to investor_kyc_path(inv[:kyc_id]),
+                                class: "text-decoration-none" do %>
+                              <span class="badge border text-primary bg-primary bg-opacity-10"
+                                    style="font-weight: 500; font-size: 0.75rem;">
+                                <i class="ti ti-user me-1" style="font-size: 11px;"></i><%= inv[:kyc_name] %>
+                              </span>
+                            <% end %>
+                          <% end %>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% else %>
+          <p class="text-muted mb-0 p-3">No failures found</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

@@ -16,6 +16,11 @@ export default class extends Controller {
     if (newStatus === "complete") {
       if (this.isDashboardPage()) {
         setTimeout(() => window.location.reload(), 1500)
+      } else if (this.isChartTab()) {
+        // Chartkick charts need a full page reload (not Turbo visit) to re-initialize
+        const url = new URL(window.location.href)
+        url.searchParams.set("tab", "kyc_dashboard")
+        setTimeout(() => { Turbo.visit(url.toString(), { action: "replace" }) }, 1500)
       } else {
         this.reloadReportsTab()
       }
@@ -24,6 +29,12 @@ export default class extends Controller {
 
   isDashboardPage() {
     return window.location.pathname.includes("portfolio_company_dashboard")
+  }
+
+  /** Tabs with Chartkick charts need a full reload to re-initialize */
+  isChartTab() {
+    const activeTab = document.querySelector(".tab-pane.show.active")
+    return activeTab && activeTab.id === "kyc-dashboard-tab"
   }
 
   /** Fetches the current page with the active tab param and swaps in fresh content */

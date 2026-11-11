@@ -1,0 +1,29 @@
+<%# KYC Dashboard basic metrics — scope-based cards (Verified, Unverified,
+    Completed, Expired, Individual, Non-Individual). Clicking a card navigates
+    to the normal KYC page filtered by that scope.
+    Locals: basic_stats (Hash with :verified, :unverified, :completed_scope,
+            :expired, :individual, :non_individual) %>
+<%
+  cards = [
+    { key: :verified,       label: "Verified",       color: "success",   path: investor_kycs_path(q: ransack_query_params("verified", :eq, true)) },
+    { key: :unverified,     label: "Unverified",     color: "warning",   path: investor_kycs_path(q: ransack_query_params("verified", :eq, false)) },
+    { key: :completed_scope, label: "Completed",     color: "info",      path: investor_kycs_path(q: ransack_query_params("completed_by_investor", :eq, true)) },
+    { key: :expired,        label: "Expired",        color: "danger",    path: investor_kycs_path(q: ransack_query_params("expiry_date", :lt, Date.today)) },
+    { key: :individual,     label: "Individual",     color: "primary",   path: investor_kycs_path(q: ransack_query_params("kyc_type", :eq, "Individual")) },
+    { key: :non_individual, label: "Non Individual", color: "secondary", path: investor_kycs_path(q: ransack_query_params("kyc_type", :eq, "Non Individual")) }
+  ]
+%>
+
+<div class="row g-2 mb-3">
+  <% cards.each do |card| %>
+    <div class="col d-flex">
+      <%= link_to card[:path],
+            class: "card m-0 border-top stat-card-accent border-#{card[:color]} shadow-sm flex-fill text-decoration-none" do %>
+        <div class="card-body py-2 px-3">
+          <h3 class="fs-4 fw-normal mb-0"><%= basic_stats[card[:key]] %></h3>
+          <span class="card-subtitle mb-0 text-<%= card[:color] %> small"><%= card[:label] %></span>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>

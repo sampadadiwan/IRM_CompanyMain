@@ -1,0 +1,34 @@
+<%# KYC Dashboard stat cards — six clickable cards showing validation counts.
+    Clicking a card filters the table via the kyc-dashboard-filter Stimulus controller.
+    Locals: stats (Hash with :validated, :pending, :successful, :failed, :partial, :expired),
+            support_agent (SupportAgent) %>
+<% total = [stats[:validated], 1].max %>
+<%
+  cards = [
+    { key: "validated",  label: "Total KYCs",              count: stats[:validated],  color: "primary",  icon: "clipboard-check" },
+    { key: "pending",    label: "Pending Validation",      count: stats[:pending],    color: "secondary", icon: "clock" },
+    { key: "successful", label: "Successful",             count: stats[:successful], color: "success",  icon: "circle-check" },
+    { key: "failed",     label: "Failed",                 count: stats[:failed],     color: "danger",   icon: "circle-x" },
+    { key: "partial",    label: "Partially Failed",       count: stats[:partial],    color: "warning",  icon: "alert-triangle" },
+    { key: "expired",    label: "Expired",                count: stats[:expired],    color: "dark",     icon: "calendar-off" }
+  ]
+%>
+
+<div class="row g-2 mb-3" data-kyc-dashboard-filter-target="statsRow">
+  <% cards.each do |card| %>
+    <% pct = ((card[:count].to_f / total) * 100).round(1) %>
+    <div class="col-sm-4 col-md-2 d-flex">
+      <div class="card m-1 border-top stat-card-accent border-<%= card[:color] %> shadow-sm flex-fill cursor-pointer"
+           data-action="click->kyc-dashboard-filter#filterByCard"
+           data-kyc-dashboard-filter-status-param="<%= card[:key] %>"
+           data-kyc-dashboard-filter-target="statCard"
+           data-status="<%= card[:key] %>">
+        <div class="card-body py-2 px-3">
+          <h3 class="fs-4 fw-normal mb-0"><%= card[:count] %></h3>
+          <span class="card-subtitle mb-0 text-<%= card[:color] %> small"><%= card[:label] %></span>
+          <div class="small text-muted"><%= pct %>%</div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>

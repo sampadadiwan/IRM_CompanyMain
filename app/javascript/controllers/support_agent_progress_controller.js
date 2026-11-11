@@ -4,13 +4,24 @@ export default class extends Controller {
   static values = {
     reportId: Number,
     supportAgentId: Number,
-    collapsed: { type: Boolean, default: false }
+    collapsed: { type: Boolean, default: false },
+    runStatus: { type: String, default: "" }
   }
 
   static targets = ["panelBody", "collapseIcon"]
 
   connect() {
     console.log("SupportAgentProgress connected", this.reportIdValue)
+    // When Turbo Stream replaces the panel after a run finishes, a new
+    // controller instance connects with runStatus already "done". Detect
+    // this by checking the parent container — kyc_single_progress_panel
+    // only receives content via live ActionCable broadcasts, never on
+    // initial page load (it starts empty).
+    if (this.runStatusValue === "done" && this.element.closest("#kyc_single_progress_panel")) {
+      const url = new URL(window.location.href)
+      url.searchParams.set("tab", "kyc_dashboard")
+      setTimeout(() => Turbo.visit(url.toString(), { action: "replace" }), 1500)
+    }
   }
 
   togglePanel(event) {

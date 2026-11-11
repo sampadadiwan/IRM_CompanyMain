@@ -1,0 +1,28 @@
+<%# KYC Dashboard submission status metrics — five cards showing the KYC form
+    submission pipeline (Not Sent → Link Sent → Draft Saved → Completed → Verified).
+    Clicking a card navigates to the normal KYC page filtered by submission_status.
+    Locals: basic_stats (Hash with :not_sent, :link_sent, :draft_saved,
+            :completed, :verified_status) %>
+<%
+  cards = [
+    { key: :not_sent,        label: "Not Sent",    color: "secondary", icon: "send-off" },
+    { key: :link_sent,       label: "Link Sent",   color: "info",      icon: "send" },
+    { key: :draft_saved,     label: "Draft Saved",  color: "warning",   icon: "file-pencil" },
+    { key: :completed,       label: "Completed",    color: "primary",   icon: "circle-dashed-check" },
+    { key: :verified_status, label: "Verified",     color: "success",   icon: "circle-check" }
+  ]
+%>
+
+<div class="row g-2 mb-3">
+  <% cards.each do |card| %>
+    <div class="col d-flex">
+      <%= link_to investor_kycs_path(q: { submission_status_eq: card[:key].to_s.delete_suffix("_status") }),
+            class: "card m-0 border-top stat-card-accent border-#{card[:color]} shadow-sm flex-fill text-decoration-none" do %>
+        <div class="card-body py-2 px-3">
+          <h3 class="fs-4 fw-normal mb-0"><%= basic_stats[card[:key]] %></h3>
+          <span class="card-subtitle mb-0 text-<%= card[:color] %> small"><%= card[:label] %></span>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>
